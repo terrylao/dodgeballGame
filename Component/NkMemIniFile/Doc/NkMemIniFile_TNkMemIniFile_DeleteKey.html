@@ -1,0 +1,32 @@
+<html>
+<head><title>メソッド DeleteKey</title></head>
+<body>
+<h1>メソッド DeleteKey</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure DeleteKey(const Section, Ident: String); override;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  名前の削除
+  パラメータ
+    Section: セクション名。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Section の
+             文字の大小は区別されます。falseの時は区別されません。
+    Ident:   名前です。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Ident の
+             文字の大小は区別されます。falseの時は区別されません。
+  詳細
+    セクションと名前で指定された名前を削除します。
+    名前に関連付けられたコメントも削除されます。
+    存在しない名前が指定されたときは何もしません。
+    セクション、名前が不正な場合も何もしません。
+
+</pre>
+</body></html>

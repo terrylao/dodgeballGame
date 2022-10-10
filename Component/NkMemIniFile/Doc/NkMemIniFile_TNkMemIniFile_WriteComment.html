@@ -1,0 +1,35 @@
+<html>
+<head><title>メソッド WriteComment</title></head>
+<body>
+<h1>メソッド WriteComment</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure WriteComment(const Section, Ident: string; Comment: TStrings); overload;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクション名/キー名で指定したキーにコメントを書き込む
+  パラメータ
+    Section: セクション名。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Section の
+             文字の大小は区別されます。falseの時は区別されません。
+    Ident:   名前です。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Ident の
+             文字の大小は区別されます。falseの時は区別されません。
+    Comment: 設定するコメントです。 TStringsの下位クラスのインスタンスを
+             してします。各行の先頭に ';' が付いている必要はありません。
+             ';' は必要に応じて自動的に付加されます。
+  詳細
+    指定されたセクションの指定された名前にコメントを設定します。
+    指定した名前が無い場合は何もしません。
+    コメントの各行の先頭に ';' が付いている必要はありません。
+             ';' は必要に応じて自動的に付加されます。
+
+</pre>
+</body></html>

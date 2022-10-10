@@ -1,0 +1,31 @@
+<html>
+<head><title>メソッド ReadSection</title></head>
+<body>
+<h1>メソッド ReadSection</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure ReadSection(const Section: string; KeyNames: TStrings); override;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクション内のキーの一覧の取得。
+  パラメータ
+    Section:  セクション名。前後の空白は無視されます。
+              CaseSensitive プロパティが True のときは Section の
+              文字の大小は区別されます。falseの時は区別されません。
+    KeyNames: 名前のリストが入る TStringsの下位クラスのインスタンス
+  詳細
+    指定されたセクション内の名前の一覧を返します。名前は KeyNamesの１行に
+    １個ずつ入ります。
+    KeyNamesは名前のリストが入る前にクリアされます。
+    KeyNames は作成済みの TStringsの下位クラスのインスタンスを指定してください。
+    無名セクションの名前の一覧は常に空です。
+
+</pre>
+</body></html>

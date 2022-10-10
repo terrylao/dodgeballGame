@@ -1,0 +1,38 @@
+<html>
+<head><title>メソッド WriteString</title></head>
+<body>
+<h1>メソッド WriteString</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure WriteString(const Section, Ident, Value: String); override;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクション名/キー名で指定したキーに値を書き込む
+  パラメータ
+    Section: セクション名。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Section の
+             文字の大小は区別されます。falseの時は区別されません。
+    Ident:   名前です。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Ident の
+             文字の大小は区別されます。falseの時は区別されません。
+    Value:   書き込む値です。
+  詳細
+    指定されたセクションの指定された値を更新します。
+    指定されたセクションが無ければ作られます。指定された名前が無ければ
+    作られます。
+    Sectionの前後の空白をトリムした後の文字列が空文字列のとき
+    ENkMemIniFileInvalidSection例外が起きます。
+    Identの前後の空白をトリムした後の文字列が空文字列の場合や '=' を
+    含む場合は ENkMemIniFileInvalidName例外が起きます。
+    Value はぞのまま書き込まれます。前後に空白があってもそのまま書き込まれます。
+    但しValueが CR や LF を含む場合はENkMemIniFileInvalidValue例外が起きます。
+
+</pre>
+</body></html>

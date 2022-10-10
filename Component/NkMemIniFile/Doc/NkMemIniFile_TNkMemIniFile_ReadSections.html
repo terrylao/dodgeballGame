@@ -1,0 +1,28 @@
+<html>
+<head><title>メソッド ReadSections</title></head>
+<body>
+<h1>メソッド ReadSections</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure ReadSections(SectionNames: TStrings); override;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクション名の一覧を取得
+  パラメータ
+    SectioNames: セクション名のリストが入る TStringsの下位クラスのインスタンス
+  詳細
+    セクション名の一覧を返します。セクション名は SectionNamesの１行に
+    １個ずつ入ります。
+    SectionNamesは名前のリストが入る前にクリアされます。
+    SectionNames は作成済みの TStringsの下位クラスのインスタンスを指定してください。
+    セクション名の一覧には無名セクションは含まれません。
+
+</pre>
+</body></html>

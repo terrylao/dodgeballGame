@@ -1,0 +1,34 @@
+<html>
+<head><title>メソッド WriteSectionComment</title></head>
+<body>
+<h1>メソッド WriteSectionComment</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure WriteSectionComment(const Section, Comment: string); overload;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクションにコメントを書きこむ
+  パラメータ
+    Section: セクション名。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Section の
+             文字の大小は区別されます。falseの時は区別されません。
+    Comment: 設定するコメントです。 文字列で指定します。文字列は複数行でも
+             問題ありません。コメントの各行の先頭に ';' が付いている
+             必要はありません。';' は必要に応じて自動的に付加されます。
+  詳細
+    指定されたセクションにコメントを設定します。
+    セクションが無い場合は何もしません。
+    コメントの各行の先頭に ';' が付いている必要はありません。
+             ';' は必要に応じて自動的に付加されます。
+    Sectionの前後の空白をトリムした結果が空文字列の場合、
+    無名のセクションを指定したことになります。
+
+</pre>
+</body></html>

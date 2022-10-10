@@ -1,0 +1,33 @@
+<html>
+<head><title>メソッド ReadString</title></head>
+<body>
+<h1>メソッド ReadString</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  function ReadString(const Section, Ident, Default: string): string; override;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  値の読み込み
+  パラメータ
+    Section: セクション名。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Section の
+             文字の大小は区別されます。falseの時は区別されません。
+    Ident:   名前です。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Ident の
+             文字の大小は区別されます。falseの時は区別されません。
+    Default: セクションに名前が存在しなかったとき ReadString が返す値です。
+  戻り値
+     読み取った値が文字列として返されます。
+  詳細
+    指定されたセクションの指定された名前の値を返します。
+    値が存在しなかった場合は Default を返します。
+
+</pre>
+</body></html>

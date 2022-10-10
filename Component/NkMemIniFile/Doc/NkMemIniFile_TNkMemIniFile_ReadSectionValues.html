@@ -1,0 +1,34 @@
+<html>
+<head><title>メソッド ReadSectionValues</title></head>
+<body>
+<h1>メソッド ReadSectionValues</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure ReadSectionValues(const Section: string; KeyValues: TStrings); override;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクション内の 名前=値　のリストを取得
+  パラメータ
+    Section:   セクション名。前後の空白は無視されます。
+               CaseSensitive プロパティが True のときは Section の
+               文字の大小は区別されます。falseの時は区別されません。
+    KeyValues: キー/値ペアのリストが入る TStringsの下位クラスのインスタンス
+  詳細
+    指定されたセクションの名前/値ペアの一覧を取得します。
+    名前/値ペアは KeyValuesの１行に１個ずつ入ります。
+    名前/値ペアはIniファイル上のテキスト表現と同じになります。
+    値が 空白を含む場合や引用符を含む場合は、値は引用符で囲まれます。
+    引用符は２重引用符に変換されます(CSVと同じ)。
+    KeyValesは名前のリストが入る前にクリアされます。
+    KeyVales は作成済みの TStringsの下位クラスのインスタンスを指定してください。
+    無名セクションの名前/値ペアの一覧は常に空です。
+
+</pre>
+</body></html>

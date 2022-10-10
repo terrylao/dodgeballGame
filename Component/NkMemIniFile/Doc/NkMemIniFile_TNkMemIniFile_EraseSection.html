@@ -1,0 +1,29 @@
+<html>
+<head><title>メソッド EraseSection</title></head>
+<body>
+<h1>メソッド EraseSection</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure EraseSection(const Section: string); override;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクションを削除
+  パラメータ
+    Section: セクション名。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Section の
+             文字の大小は区別されます。falseの時は区別されません。
+  詳細
+    指定されたセクションを削除します。セクションに関連付けられた
+    コメントも削除されます。
+    無名セクションを削除しようとすると ENkMemIniFileInvalidSection
+    例外が起きます。
+
+</pre>
+</body></html>

@@ -1,0 +1,33 @@
+<html>
+<head><title>メソッド ReadComment</title></head>
+<body>
+<h1>メソッド ReadComment</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  procedure ReadComment(const Section, Ident: string; Comment: TStrings); overload;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  セクション名/キー名で指定したキーのコメントを読む
+  パラメータ
+    Section: セクション名。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Section の
+             文字の大小は区別されます。falseの時は区別されません。
+    Ident:   名前です。前後の空白は無視されます。
+             CaseSensitive プロパティが True のときは Ident の
+             文字の大小は区別されます。falseの時は区別されません。
+    Comment: コメントが入る TStringsの下位クラスのインスタンス
+  詳細
+    指定されたセクションの指定された名前のコメントを Comment に返します。
+    Commentはコメントが入る前にクリアされます。
+    コメントが無い場合や、名前が無い場合は 0 行のコメントが返ります。
+    コメントは';'付きです。不要な場合はアプリケーション側で取り除いてください。
+
+</pre>
+</body></html>

@@ -1,0 +1,27 @@
+<html>
+<head><title>プロパティ CaseSensitive</title></head>
+<body>
+<h1>プロパティ CaseSensitive</h1>
+<p>
+<a href="index.html">ユニットリスト</a>　
+ユニット名 = <a href="NkMemIniFile.html">NkMemIniFile</a>　
+クラス名 = <a href="NkMemIniFile.html">TNkMemIniFile</a>　
+</p>
+<h2>宣言</h2>
+<pre>
+  property CaseSensitive: Boolean read GetCaseSensitive write SetCaseSensitive;
+
+</pre>
+<h2>説明</h2>
+<pre>
+  名前の大小を区別する
+  詳細
+    セクション名、名前で検索を行うとき、大文字小文字を区別するかを指定します。
+    このプロパティはいつでも変更できますが、Trueから False に変更するとき
+    注意が必要です。Trueから False に変更すると、大文字/小文字だけが
+    異なるセクション名や名前は同名とみなされるようになります。
+    同名となったセクションや名前は「あと」の方のもので上書きされます。
+    デフォルトは False です。
+
+</pre>
+</body></html>

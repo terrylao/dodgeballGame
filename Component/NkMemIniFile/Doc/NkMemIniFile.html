@@ -1,0 +1,61 @@
+<html>
+<head><title>NkMemIniFileユニットのリファレンス</title></head>
+<body>
+<h1>NkMemIniFileユニットのリファレンス</h1>
+<p>
+<a href="index.html">ユニットリスト</a>
+<a href="NkMemIniFile-classes.html">クラス</a>　
+</p>
+<h2>説明</h2>
+<pre>
+  ////////
+   NkMemIniFile ユニット
+  
+   TNkmemIniFile: 拡張版 TMemIniFile
+  　 Coded By T. Nakamura
+     Ver 0.1 2006/07/02
+     Ver 0.2 2006/07/02
+     Ver 0.3 2006/07/16
+  
+    TNkMemIniFile は TMemIniFile の拡張版です。
+    次の特徴を備えています。
+    1) 名前と値に日本語が使用できます。
+    2) 名前にコメントを付加できます。
+    3) セクションにコメントを付加できます。
+    4) 名前/値ペアの参照が高速です。
+       セクションと名前をハッシュで高速に検索します。
+       速度は TmemIniFile とほど同等ですが TIniFileよりはるかに高速です。
+    5) 名前/値ペアの更新、追加、削除が TMemIniFileに比べ百倍高速です。
+    6) 値に引用符をサポートしています。値が空白を含む場合や、
+       引用符が含まれる場合、値は 引用符で囲まれて書き込まれます。
+       値の中の引用符が２つの引用符に置き換わります(CSVと同じ)。
+  
+    使用の詳細はメソッドの説明を見てください。
+  
+    TMemIniFile との性能比較
+    測定条件 Windows XP SP2, Celeron 2.4GHz, メモリ 512MHz, Delphi 7
+  
+     TMemIniFile
+      Load(10万キー)       Time =     0.36 Sec
+      Read(10万キー)       Time =     0.58 Sec
+      Update(10万キー)     Time =   370.20 Sec
+      Delete(10万キー)     Time =   145.59 Sec
+      Add(10万キー)        Time =   156.84 Sec
+      UpdateFile(10万キー) Time =     0.16 Sec
+  
+     TNkMemIniFile
+      Load(10万キー)       Time =     1.30 Sec
+      Read(10万キー)       Time =     0.91 Sec
+      Update(10万キー)     Time =     0.84 Sec
+      Delete(10万キー)     Time =     1.22 Sec
+      Add(10万キー)        Time =     1.38 Sec
+      UpdateFile(10万キー) Time =     0.30 Sec
+  
+    本ソフトウェアの使用、配布や改変に一切の制限を
+    設けません。商用利用も出来ますし、利用に際して著作権
+    表示も不要です。ご自由にお使いください。
+    なお、これらの使用によって生じた不具合の責任は一切負
+    いません。予めご了承ください。
+
+</pre>
+</body></html>
