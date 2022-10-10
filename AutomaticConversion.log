@@ -1,0 +1,34 @@
+kunio3.lpi Note: Added defines -dBorland -dVer150 -dDelphi7 -dCompiler6_Up -dPUREPASCAL in custom options
+ Progress: Found all unit files
+kunio3.lpi Note: Added Package CodeTools as a dependency.
+kunio3.lpr(1,16) Note: Added MODE Delphi syntax modifier after unit name.
+ : 
+ : *** Converting unit files belonging to project/package ***
+Main.pas Note: Changed encoding from cp950 to UTF-8
+Main.pas Note: Replaced unit "QDArc" with "DArc" in uses section.
+Main.pas Note: Replaced unit "Windows" with "LCLIntf, LCLType, LMessages" in uses section.
+Main.pas(1,11) Note: Added MODE Delphi syntax modifier after unit name.
+Main.pas(587,23) Note: Replaced call TimeGetTime; with GetTickCount; { *Converted from TimeGetTime* }
+Main.pas(572,27) Note: Replaced call TimeGetTime; with GetTickCount; { *Converted from TimeGetTime* }
+Main.pas(556,23) Note: Replaced call TimeGetTime; with GetTickCount; { *Converted from TimeGetTime* }
+Main.pas(553,19) Note: Replaced call TimeGetTime; with GetTickCount; { *Converted from TimeGetTime* }
+Main.pas(484,15) Note: Replaced call TimeGetTime; with GetTickCount; { *Converted from TimeGetTime* }
+VarUnit.pas Note: Changed encoding from cp950 to UTF-8
+VarUnit.pas Note: Replaced unit "Windows" with "LCLIntf, LCLType, LMessages" in uses section.
+VarUnit.pas(1,14) Note: Added MODE Delphi syntax modifier after unit name.
+DBUnit.pas Note: Changed encoding from cp950 to UTF-8
+DBUnit.pas Note: Replaced unit "Windows" with "LCLIntf, LCLType, LMessages" in uses section.
+DBUnit.pas(1,13) Note: Added MODE Delphi syntax modifier after unit name.
+CPUUnit.pas Note: Changed encoding from cp950 to UTF-8
+CPUUnit.pas Note: Replaced unit "Windows" with "LCLIntf, LCLType, LMessages" in uses section.
+CPUUnit.pas(1,14) Note: Added MODE Delphi syntax modifier after unit name.
+DBClass.pas Note: Changed encoding from cp950 to UTF-8
+DBClass.pas Note: Replaced unit "QDArc" with "DArc" in uses section.
+DBClass.pas Note: Replaced unit "Windows" with "LCLIntf, LCLType, LMessages" in uses section.
+DBClass.pas(1,14) Note: Added MODE Delphi syntax modifier after unit name.
+ : 
+ : *** Fixing used units and Repairing form files ***
+Main.pas Note: Removed property "TextHeight".
+Main.pas Note: Removed property "OldCreateOrder".
+ Progress: Conversion took: 00:30:20
+ : Conversion Ready.

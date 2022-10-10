@@ -1,0 +1,15 @@
+unit CPU;
+
+interface
+uses
+    Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+    Dialogs, DDraw, DSound, DDDD, DDSD, Ddidex, MMsystem, IniFiles, StrUtils,
+    DXInput, Math;
+
+
+implementation
+
+uses Main,VarUnit,Types;
+
+end.
+ 

@@ -1,0 +1,106 @@
+#  1...▼　Create
+#  2...・Alpha32を生成します
+#  3...　・無事生成
+#  4...▼　MakeEmptyTexture
+#  5...　　・LNo.0 ﾃｷｽﾄ描画用(汎用)空テクスチャを生成しました
+#  6...▼　LoadTexture
+#  7...●●●ファイルが見つからないよ
+#  8...  Filename : D:\いしだ小屋\（再）\ドッジボール（再）\font\font.png
+#  9...▼　LoadTexture
+# 10...・[bmp\msl.png]をRGB情報として読み込みます
+# 11...　・432 x 240 テクスチャに展開しました
+# 12...　　・LNo.1 [bmp\msl.png]をテクスチャに読み込みました
+# 13...▼　LoadTexture
+# 14...・[bmp\psl.png]をRGB情報として読み込みます
+# 15...　・432 x 240 テクスチャに展開しました
+# 16...　　・LNo.2 [bmp\psl.png]をテクスチャに読み込みました
+# 17...▼　LoadTexture
+# 18...・[bmp\vs.png]をRGB情報として読み込みます
+# 19...　・432 x 240 テクスチャに展開しました
+# 20...　　・LNo.3 [bmp\vs.png]をテクスチャに読み込みました
+# 21...▼　LoadTexture
+# 22...・[bmp\font.png]をRGB情報として読み込みます
+# 23...　・160 x 112 テクスチャに展開しました
+# 24...　　・LNo.4 [bmp\font.png]をテクスチャに読み込みました
+# 25...▼　LoadTexture
+# 26...・[bmp\dbitem.png]をRGB情報として読み込みます
+# 27...　・160 x 160 テクスチャに展開しました
+# 28...　　・LNo.5 [bmp\dbitem.png]をテクスチャに読み込みました
+# 29...▼　LoadTexture
+# 30...・[bmp\dbname.png]をRGB情報として読み込みます
+# 31...　・128 x 240 テクスチャに展開しました
+# 32...　　・LNo.6 [bmp\dbname.png]をテクスチャに読み込みました
+# 33...▼　LoadTexture
+# 34...・[bmp\dbface.png]をRGB情報として読み込みます
+# 35...　・96 x 120 テクスチャに展開しました
+# 36...　　・LNo.7 [bmp\dbface.png]をテクスチャに読み込みました
+# 37...▼　LoadTexture
+# 38...・[bmp\dbetc.png]をRGB情報として読み込みます
+# 39...　・176 x 224 テクスチャに展開しました
+# 40...　　・LNo.8 [bmp\dbetc.png]をテクスチャに読み込みました
+# 41...▼　LoadTexture
+# 42...・[bmp\dbbody.png]をRGB情報として読み込みます
+# 43...　・256 x 512 テクスチャに展開しました
+# 44...　　・LNo.9 [bmp\dbbody.png]をテクスチャに読み込みました
+# 45...▼　LoadTexture
+# 46...●●●ファイルが見つからないよ
+# 47...  Filename : D:\いしだ小屋\（再）\ドッジボール（再）\bmp\dbbodyb.png
+# 48...▼　LoadTexture
+# 49...・[bmp\dbbody.png]をRGB情報として読み込みます
+# 50...　・256 x 512 テクスチャに展開しました
+# 51...　　・LNo.10 [bmp\dbbody.png]をテクスチャに読み込みました
+# 52...▼　LoadTexture
+# 53...●●●ファイルが見つからないよ
+# 54...  Filename : D:\いしだ小屋\（再）\ドッジボール（再）\bmp\dbbodyb.png
+# 55...▼　LoadTexture
+# 56...・[bmp\dbcourt.png]をRGB情報として読み込みます
+# 57...　・432 x 240 テクスチャに展開しました
+# 58...　　・LNo.11 [bmp\dbcourt.png]をテクスチャに読み込みました
+# 59...▼　FreeTexture
+# 60...　・LNo.11 bmp\dbcourt.pngを解放しました
+# 61...▼　FreeTexture
+# 62...　・LNo.10 bmp\dbbody.pngを解放しました
+# 63...　　・反転用テクスチャも解放しました
+# 64...▼　FreeTexture
+# 65...　・LNo.9 bmp\dbbody.pngを解放しました
+# 66...　　・反転用テクスチャも解放しました
+# 67...▼　FreeTexture
+# 68...　・LNo.8 bmp\dbetc.pngを解放しました
+# 69...　　・反転用テクスチャも解放しました
+# 70...▼　FreeTexture
+# 71...　・LNo.7 bmp\dbface.pngを解放しました
+# 72...　　・反転用テクスチャも解放しました
+# 73...▼　FreeTexture
+# 74...　・LNo.6 bmp\dbname.pngを解放しました
+# 75...▼　FreeTexture
+# 76...　・LNo.5 bmp\dbitem.pngを解放しました
+# 77...　　・反転用テクスチャも解放しました
+# 78...▼　FreeTexture
+# 79...　・LNo.4 bmp\font.pngを解放しました
+# 80...▼　FreeTexture
+# 81...　・LNo.3 bmp\vs.pngを解放しました
+# 82...▼　FreeTexture
+# 83...　・LNo.2 bmp\psl.pngを解放しました
+# 84...▼　FreeTexture
+# 85...　・LNo.1 bmp\msl.pngを解放しました
+# 86...▼　FreeTexture
+# 87...　・LNo.0 ﾃｷｽﾄ描画用(汎用)を解放しました
+# 88...▼　Destroy
+# 89...・Alpha32を解放します
+# 90...　・テクスチャリストを解放します
+# 91...　　LNo.0  解放済み
+# 92...　　LNo.1  解放済み
+# 93...　　LNo.2  解放済み
+# 94...　　LNo.3  解放済み
+# 95...　　LNo.4  解放済み
+# 96...　　LNo.5  解放済み
+# 97...　　LNo.6  解放済み
+# 98...　　LNo.7  解放済み
+# 99...　　LNo.8  解放済み
+#100...　　LNo.9  解放済み
+#101...　　LNo.10  解放済み
+#102...　　LNo.11  解放済み
+#103...　　PalNo.0  解放しました
+#104...　　PalNo.1  解放しました
+#105...　　・無事解放
+#106...ﾉｼ

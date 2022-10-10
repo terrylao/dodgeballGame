@@ -1,0 +1,21 @@
+object Form1: TForm1
+  Left = 256
+  Height = 576
+  Top = 177
+  Width = 772
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'DtDodgeball'
+  Color = clBlack
+  DesignTimePPI = 120
+  Font.CharSet = SHIFTJIS_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -15
+  Font.Name = 'ＭＳ Ｐゴシック'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
+  OnKeyUp = FormKeyUp
+  Position = poScreenCenter
+  LCLVersion = '2.3.0.0'
+end

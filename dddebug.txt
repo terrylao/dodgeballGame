@@ -1,0 +1,14 @@
+debug#00001 ... Enumerated DDraw Driver ... DirectDraw HAL (display)
+debug#00002 ... ★DXINILoad
+debug#00003 ... ★DBINILoad
+debug#00004 ... ★TOggDataCtrl.Create
+debug#00005 ... ★TMemoryStream.Create
+debug#00006 ... ★TDDSDWaveData.CreateStream
+debug#00007 ... ★TMemoryStream.Create
+debug#00008 ... ★TDDSDWaveData.CreateStream
+debug#00009 ... ★DDDD初期化
+debug#00010 ... スクリーンモード864 x 480 x 0 として初期化を開始します
+debug#00011 ... …DirectDraw/3D関連オブジェクトを全て解放します…
+debug#00012 ... バックバッファを解放しました
+debug#00013 ... プライマリサーフェスを解放しました
+debug#00014 ... Clipperの解放に失敗しました(Error Code(1))

@@ -1,0 +1,17 @@
+program kunio3;
+
+uses
+  Forms,
+  Main in 'Main.pas' {Form1},
+  VarUnit in 'VarUnit.pas',
+  DBUnit in 'DBUnit.pas',
+  CPUUnit in 'CPUUnit.pas',
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.Title := '‘h‚êA”MŒŒd”h‡V';
+  Application.CreateForm(TForm1, Form1);
+  Application.Run;
+end.

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="kunio3.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <CursorPos X="13" Y="8"/>
+        <UsageCount Value="54"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="Main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="61"/>
+        <CursorPos X="21" Y="67"/>
+        <UsageCount Value="54"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="VarUnit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="5"/>
+        <CursorPos Y="9"/>
+        <UsageCount Value="54"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="DBUnit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="96" Y="10"/>
+        <UsageCount Value="54"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="CPUUnit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="4"/>
+        <CursorPos X="49" Y="10"/>
+        <UsageCount Value="54"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="DBClass.pas"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="299"/>
+        <CursorPos X="26" Y="260"/>
+        <UsageCount Value="54"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+      <Unit>
+        <Filename Value="C:\fpcupdeluxe\fpcsrc\rtl\objpas\math.pp"/>
+        <UnitName Value="Math"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="C:\fpcupdeluxe\lazarus\lcl\dialogs.pp"/>
+        <UnitName Value="Dialogs"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="C:\fpcupdeluxe\fpcsrc\rtl\inc\objpash.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="193"/>
+        <CursorPos X="23" Y="206"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="component\NkMemIniFile\NkMemIniFile.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="29">
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="26" Column="61" TopLine="13"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="28" Column="22" TopLine="17"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="51" Column="95" TopLine="32"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="52" Column="30" TopLine="39"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="56" Column="30" TopLine="39"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="479" Column="16" TopLine="469"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="42" Column="33" TopLine="28"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="52" Column="30" TopLine="31"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="42" Column="60" TopLine="32"/>
+      </Position>
+      <Position>
+        <Filename Value="Main.pas"/>
+        <Caret Line="67" Column="21" TopLine="61"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="91" Column="31" TopLine="31"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="13" Column="22" TopLine="7"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="68" Column="11" TopLine="55"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="69" Column="23" TopLine="53"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="70" Column="34" TopLine="56"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="68" Column="28" TopLine="53"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="64" Column="6" TopLine="53"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="29" TopLine="16"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="44" Column="12" TopLine="19"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="34" Column="9" TopLine="21"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="38" Column="18" TopLine="24"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="42" Column="44" TopLine="29"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="81" Column="19" TopLine="71"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="93" Column="45" TopLine="80"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="102" Column="33" TopLine="91"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="8" Column="49"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="102" Column="33" TopLine="134"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="252" Column="28" TopLine="239"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="257" TopLine="244"/>
+      </Position>
+      <Position>
+        <Filename Value="DBClass.pas"/>
+        <Caret Line="102" Column="11" TopLine="89"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>

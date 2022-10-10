@@ -1,0 +1,2984 @@
+unit Main;//メイン部分のコード
+
+interface
+
+uses
+    Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+    Dialogs, DDraw, DSound, DInput, DDDD, MMsystem, IniFiles, StrUtils,
+    Math, DXInput, DXSounds ,Wave;
+type
+    TForm1 = class(TForm)
+        DDDD1: TDDDD;
+    DXInput1: TDXInput;
+    DXInput2: TDXInput;
+    DXInput3: TDXInput;
+    DXInput4: TDXInput;
+    DXSound: TDXSound;
+        procedure DDDD1Init(Sender: TObject; fNeedChange: Boolean);
+        procedure DDDD1Destroy(Sender: TObject);
+        procedure FormCreate(Sender: TObject);
+        procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+        procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+        procedure FormDestroy(Sender: TObject);
+    procedure DXSoundInitialize(Sender: TObject);
+    procedure DXSoundFinalize(Sender: TObject);
+    private
+        //メインループ
+        procedure MainLoop(Sender: TObject; var Done: Boolean);
+    public
+        //サーフェイス解放
+        procedure SfFree(ddsf:TDDDDSurface);
+        //システムメモリにＢＭＰをロード
+        procedure LoadBMPs(var ddsf:TDDDDSurface;FileName:String;Wid:integer;Hei:integer);
+        //ビデオメモリにＢＭＰをロード
+        procedure LoadBMPv(var ddsf:TDDDDSurface;FileName:String;Wid:integer;Hei:integer);
+        procedure INISet;//ＩＮＩファイル読み込み
+        procedure KeyState;//キー入力の読み込み
+        procedure LoopOP;//オープニング
+        procedure LoopMSL;//ゲームモード選択
+        procedure LoopTSL;//チームセレクト
+        procedure LoopPSL;//ポジション変更
+        procedure LoopVS;//マッチアップ
+        procedure LoopDB;//試合
+        procedure LoopHDC;//ハンディキャップ
+        procedure LoopCSL;//コートセレクト
+        procedure LoopNAMENNAYO;//リセット
+    end;
+    //画面の色変え
+    procedure ColorChange(ccc:TColor);
+    //画像の描画
+    procedure DDDraw(xxx:integer;yyy:integer;sr:TRect;ddsf:TDDDDSurface;Mask_f:boolean);
+    //顔の描画
+    procedure FaceDraw(i:integer;i2:integer;xxx:integer;yyy:integer;ftype:integer);
+    //文字の描画
+    procedure StrDraw(xxx:integer;yyy:integer;DStr:Widestring);
+    //ＳＥをならす
+    procedure SE(SENo:integer);
+    //ＢＧＭをならす
+    procedure SYSBGM(SYSNo:integer);
+    //試合ＢＧＭをならす
+    procedure BGM(BGMNo:integer);
+    //ＢＧＭ一時停止（ポーズ中）
+    procedure BGMStopSt(BGMNo:integer);
+    //ＢＧＭ一時停止解除
+    procedure BGMPlaySt(BGMNo:integer);
+    //ＢＧＭストップ
+    procedure BGMStop;
+    //ＳＥすべてストップ
+    procedure SEStop;
+    //ＳＥ指定してストップ
+    procedure SEStop2(SENo:integer);
+    //引数／１００でTrueを返す
+    function  Per100(i:integer):boolean ;
+    //引数／αでTrueを返す（難易度によって変化する）
+    function  LvPer100(i:integer):boolean;
+
+const
+    //ＳＥとＢＧＭのかず
+    SENum = 38;
+    SYSNum = 1;
+    BGMNum = 10;
+    CurColMax = 30;//カーソル点滅のカウンタ上限
+    CurColHalf = 15;//その半分
+    FRate = 18;//18/1000秒に１フレーム
+var
+    Form1: TForm1;//フォーム
+    fx:DDBLTFX;//ddBlt用構造体
+    KB : array[0..1] of integer;
+    UseKB : integer;
+    //フレームレート計算用
+    fps1 : Integer;
+    fps2 : Integer;
+    temptime : LongInt;
+    temptime2 : LongInt;
+    FPSSkip_c:integer;//FPSスキップ
+    St_time:integer;
+    Ed_time:integer;
+    Sp_time:integer;
+    //TwoHit（左右の連打）用の変数
+    NowKey  : array[0..3] of integer;//今のキー
+    LastKey : array[0..3] of integer;//直前のキー
+    TLag    : array[0..3] of integer;//その間隔
+    WaitTime: integer;//リセット時などの待ち時間
+    BGMwait : integer;//ＢＧＭの待ち時間
+    //OP
+    OPBGM_c :integer;
+    MSLPicNo:integer;
+    //TSL
+    Key_f   : Boolean; //fの時だけキー入力ＯＫ
+    CurCol : array[0..1] of integer;//カーソルの点滅
+    CurPos : array[0..1] of integer; //カーソルの位置
+    //PSL
+    PSLCol : array[0..1] of integer;
+    GetReady_c :integer;//DBまでの間
+    CPSL_c :integer;//ko
+    CPSLMember:integer;
+    PSLNo: array[0..1] of integer; //何人目を選択しているか
+    PSLData : array[0..1,0..5] of integer;//変更後のポジション[プレーヤー、ポジション]＝人
+    PSLData2 : array[0..1,0..5] of integer;//変更後のポジション2[プレーヤー、人]＝ポジション
+    //VS
+    VS_c:integer;//待ち時間
+    StBer_c: array[0..1] of integer;
+
+    GameMode    :integer;//ゲームモード（ループの選択）
+
+    PNum        :integer;//プレイヤー人数
+    UseDev      :array[0..3] of integer;
+    //ポーズボタンが押されたフラグ
+    JoyPBtn_f :boolean;
+    KeyPBtn_f :boolean;
+    //ini
+    FSc_f : Boolean;//フルスクリーン
+    FPS_f :boolean; //フレームレートを表示する
+    TBP_f :boolean;//timebeginperiodをつかう
+    FPS30_f:boolean; //描画スキップ
+    HalfSize_f :boolean;//320*240
+    Mag:integer;//画面倍率を入れておくための変数
+
+    //サーフェイス
+    ddsfOP      : TDDDDSurface; //タイトル
+    ddsfFont    : TDDDDSurface; //フォント
+    ddsfMSL     : TDDDDSurface; //モード選択
+    ddsfPSL     : TDDDDSurface; //ポジションセレクト
+    ddsfTSL     : TDDDDSurface; //チームセレクト
+    ddsfHDC     : TDDDDSurface; //ハンディキャップ
+    ddsfCSL     : TDDDDSurface; //コートセレクト
+    ddsfVS      : TDDDDSurface; //マッチアップ
+    ddsfDB      : array[0..9] of TDDDDSurface; //背景
+    ddsfDBBody  : array[0..9] of TDDDDSurface; //体
+    ddsfDBBodyB : array[0..9] of TDDDDSurface; //外人キャプテン
+    ddsfDBItem  : TDDDDSurface; //ボールなど
+    ddsfDBName  : TDDDDSurface; //名前
+    ddsfDBFace  : TDDDDSurface; //顔
+    ddsfDBEtc   : TDDDDSurface;  //小物
+    ddsfPause   : TDDDDSurface;  //ポーズ中の絵を入れておく
+
+    //音
+    dsSYS       : array[0..SYSNum] of TDirectSoundBuffer;//BGM
+    dsBGM       : array[0..BGMNum] of TDirectSoundBuffer;//試合BGM
+    dsSE        : array[0..SENum]  of TDirectSoundBuffer;//SE
+
+    Init_f : boolean; //初期化フラグ
+implementation
+
+uses VarUnit,DBUnit;
+
+{$R *.dfm}
+
+procedure DataReset();
+var
+    i:integer;
+    i2:integer;
+begin
+
+    PNum := 1;
+    WaitTime  := 0;
+    PauseAble_f := False;
+    Pause_f   := 0;
+    OP_f      := False;
+    OPBGM_c   := 0;
+    JoyPBtn_f := False;
+    KeyPBtn_f := False;
+    FPSSkip_c := 0;
+    CurCol[0] := 0;
+    CurCol[1] := 0;
+    FPSSkip_c := 0;//こうして無理やりＮＯＷＬＯＡＤＩＮＧ表示
+    BGMStop;
+    SEStop;
+    //データ初期化
+    for i2 := 0 to 1 do begin
+        P[i2] := InitP;
+    end;
+    //データ初期化
+    for i := 0 to 5 do begin
+        C[i] := InitC;
+    end;
+    Ball := InitBall;
+end;
+
+//フォームクリエイト
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+
+    Init_f  := True;
+    GameMode := INIT;
+    
+    INISet;
+
+    if TBP_f = True then timeBeginPeriod(1);
+
+    ZeroMemory(@fx,sizeof(DDBLTFX));
+    fx.dwSize := sizeof(DDBLTFX);
+
+    DataReset;
+    HardClear := -1;
+    MSLPicNo := -1;
+    GameLv := 1;
+    
+end;
+
+//システムメモリにロード
+procedure TForm1.LoadBMPs(var ddsf:TDDDDSurface;FileName:String;Wid:integer;Hei:integer);
+var
+    FullName:String;
+    SrcRect,DestRect:TRect;
+    tddsf:TDDDDSurface;
+begin
+
+    FullName:= ExtractFilePath(Application.ExeName)+'BMP\'+ FileName +'.bmp';
+    if HalfSize_f = True then begin//320*240
+        ddsf := TDDDDSurface.CreateOnSystemMemory(DDDD1,Wid,Hei,0);
+        ddsf.LoadBMP(FullName);
+        ddsf.ColorKey := ddsf.Pixels[0,0];
+    end else begin//640*480
+        tddsf := TDDDDSurface.CreateOnSystemMemory(DDDD1,Wid,Hei,0);
+        tddsf.LoadBMP(FullName);
+        ddsf := TDDDDSurface.CreateOnSystemMemory(DDDD1,Wid*2,Hei*2,0);
+        SrcRect := Bounds(0,0,Wid,Hei);
+        DestRect := Bounds(0,0,Wid*2,Hei*2);
+        ddsf.Blt(tddsf,DestRect,SrcRect,DDBLT_WAIT,fx);
+        ddsf.ColorKey := ddsf.Pixels[0,0];
+    end;
+
+end;
+
+//ビデオメモリにロード
+procedure TForm1.LoadBMPv(var ddsf:TDDDDSurface;FileName:String;Wid:integer;Hei:integer);
+var
+    FullName:String;
+    SrcRect,DestRect:TRect;
+    tddsf:TDDDDSurface;
+    tddsf2:TDDDDSurface;
+begin
+
+    FullName:= ExtractFilePath(Application.ExeName)+'BMP\'+ FileName +'.bmp';
+    if HalfSize_f = True then begin//320*240
+        ddsf := TDDDDSurface.CreateOnVideoMemory(DDDD1,Wid,Hei,0);
+        ddsf.LoadBMP(FullName);
+        ddsf.ColorKey := ddsf.Pixels[0,0];
+    end else begin//640*480
+        tddsf := TDDDDSurface.CreateOnSystemMemory(DDDD1,Wid,Hei,0);
+        tddsf.LoadBMP(FullName);
+        tddsf2 := TDDDDSurface.CreateOnSystemMemory(DDDD1,Wid*2,Hei*2,0);
+        SrcRect := Bounds(0,0,Wid,Hei);
+        DestRect := Bounds(0,0,Wid*2,Hei*2);
+        tddsf2.Blt(tddsf,DestRect,SrcRect,DDBLT_WAIT,fx);
+        ddsf := TDDDDSurface.CreateOnVideoMemory(DDDD1,Wid*2,Hei*2,0);
+        ddsf.Blt(tddsf2,DestRect,DestRect,DDBLT_WAIT,fx);
+        ddsf.ColorKey := ddsf.Pixels[0,0];
+    end;
+
+end;
+
+//DDraw初期化
+procedure TForm1.DDDD1Init(Sender: TObject; fNeedChange: Boolean);
+var
+    i:integer;
+    Wid:integer;
+    Hei:integer;
+begin
+
+    //HalfSize_f := True;
+    if HalfSize_f = True then begin
+        ClientWidth  := 320;
+        ClientHeight := 240;
+        if (FSc_f = True) then begin
+            //BorderStyle := bsNone;
+            DDDD1.FullScreenMode(320,240,16,0,'')
+        end else begin
+            DDDD1.WindowMode(320,240);
+        end;
+        Mag := 1;
+    end else begin
+        ClientWidth  := 640;
+        ClientHeight := 480;
+        if (FSc_f = True) then begin
+            //BorderStyle := bsNone;
+            DDDD1.FullScreenMode(640,480,16,0,'')
+        end else begin
+            DDDD1.WindowMode(640,480);
+        end;
+        Mag := 2;
+    end;
+    //サーフェスの作成(※解放忘れないようにする)
+    Wid := 320;
+    Hei := 240;
+    //ポーズ用
+    ddsfPause := TDDDDSurface.CreateOnSystemMemory(DDDD1,Wid,Hei,0);
+    LoadBMPs(ddsfOP,'op',Wid,Hei);
+    //LoadBMPs(ddsfEnding,'ending',Wid,Hei);
+    LoadBMPs(ddsfMSL,'msl',Wid,Hei);
+    LoadBMPs(ddsfPSL,'psl',Wid,Hei);
+    LoadBMPs(ddsfTSL,'tsl',Wid,Hei);
+    LoadBMPs(ddsfHDC,'hdc',Wid,Hei);
+    LoadBMPs(ddsfCSL,'csl',Wid,Hei);
+    LoadBMPs(ddsfVS,'vs',Wid,Hei);
+    LoadBMPv(ddsfFont,'font',160,112);
+    //dbdb
+    LoadBMPv(ddsfDBItem,'dbitem',160,160);
+    LoadBMPv(ddsfDBName,'dbname',128,240);
+    LoadBMPv(ddsfDBFace,'dbface',144,600);
+    LoadBMPs(ddsfDBEtc,'dbetc',176,224);
+    //LoadBMPs(ddsfDBEtc2,'dbetc2',72,24);
+    for i := 0 to 9 do begin
+        LoadBMPv(ddsfDB[i],'db' + inttostr(i),216,384);
+        LoadBMPv(ddsfDBBody[i],'dbbody' + inttostr(i),288,960);
+        LoadBMPv(ddsfDBBodyB[i],'dbbody' + inttostr(i) + 'b',288,240);
+    end;
+
+    //画面の消去
+    DDDD1.Clear;
+    DDDD1.Flip;
+    DDDD1.Clear;
+
+    //マウスカーソルを消す
+    ShowCursor(False);
+
+    GameMode:=OP;
+    Init_f := True;
+    //メインループの取り付け
+    Application.OnIdle := MainLoop;
+    
+end;
+
+//サウンド初期化
+procedure TForm1.DXSoundInitialize(Sender: TObject);
+var
+    i:integer;
+    format:tWAVEFORMATEX;
+begin
+
+    //サウンドバッファ
+    for i := 0 to SYSNum do begin
+        dsSYS[i] := TDirectSoundBuffer.Create(DXSound.DSound);
+        dsSYS[i].LoadFromFile(ExtractFilePath(Application.ExeName)+'BGM\sys'+inttostr(i)+'.wav');
+    end;
+    for i := 0 to SENum do begin
+        dsSE[i] := TDirectSoundBuffer.Create(DXSound.DSound);
+        dsSE[i].LoadFromFile(ExtractFilePath(Application.ExeName)+'SE\se'+inttostr(i)+'.wav');
+    end;
+    for i := 0 to BGMNum do begin
+        dsBGM[i] := TDirectSoundBuffer.Create(DXSound.DSound);
+        dsBGM[i].LoadFromFile(ExtractFilePath(Application.ExeName)+'BGM\bgm'+inttostr(i)+'.wav');
+    end;
+
+    MakePCMWaveFormatEx(format,44100,16,2);
+    DXSound.Primary.SetFormat(format);
+    
+end;
+
+//サウンド解放
+procedure TForm1.DXSoundFinalize(Sender: TObject);
+var
+    i:integer;
+begin
+
+    //サウンドバッファ
+    for i := 0 to SYSNum do begin
+        dsSYS[i].Free;
+        dsSYS[i] := nil;
+    end;
+    for i := 0 to SENum do begin
+        dsSE[i].Free;
+        dsSE[i] := nil;
+    end;
+    for i := 0 to BGMNum do begin
+        dsBGM[i].Free;
+        dsBGM[i] := nil;
+    end;
+
+end;
+
+
+//サーフェイスの解放
+procedure TForm1.SfFree(ddsf:TDDDDSurface);
+begin
+    ddsf.Free;
+    ddsf := nil;
+end;
+
+//DDraw消滅
+procedure TForm1.DDDD1Destroy(Sender: TObject);
+var
+    i:integer;
+
+begin
+    {    サーフェース廃棄   }
+
+    SfFree(ddsfOP);
+    //SfFree(ddsfEnding);
+    SfFree(ddsfFont);
+    SfFree(ddsfMSL);
+    SfFree(ddsfPSL);
+    SfFree(ddsfTSL);
+    SfFree(ddsfHDC);
+    SfFree(ddsfCSL);
+    SfFree(ddsfVS);
+    SfFree(ddsfdbFace);
+    SfFree(ddsfdbEtc);
+    //SfFree(ddsfdbEtc2);
+    SfFree(ddsfdbName);
+    SfFree(ddsfDBItem);
+    //SfFree(ddsf);
+    for i := 0 to 9 do begin
+        SfFree(ddsfDB[i]);
+        SfFree(ddsfDBBody[i]);
+        SfFree(ddsfDBBodyB[i]);
+    end;
+
+end;
+
+//*******************************************************************************
+//メインループ
+//*****************************************************************************)
+procedure TForm1.MainLoop(Sender: TObject; var Done: Boolean);
+var
+    tgt:integer;
+    r5     : TRect;
+    ttt30:integer;
+
+begin
+
+    //FPS計算
+    tgt := TimeGetTime;
+    if ((tgt - TempTime) > 1000)then
+    begin
+      //fps1 := 1000 div e;
+      fps1 := fps2;
+      fps2 := 0;
+      TempTime := tgt;
+    end;
+    inc(fps2);
+    if WaitTime > 0 then begin
+
+        dec(WaitTime);
+        tgt := TimeGetTime;
+        while (tgt < (TempTime2+FRate)) do begin
+            tgt := TimeGetTime;
+        end;
+        temptime2 := TimeGetTime;
+        Done := False;
+        Exit;
+
+    end else begin
+
+        WaitTime := 0;
+
+    end;
+    //キー状態取得
+    KeyState;
+
+    //ポーズの瞬間
+    if Pause_f = 1 then begin
+        //BGMwait := 1;
+        //BGMStop;
+        BGMStopSt(Stage);//音量下げる
+        SEStop;
+        SE(13);
+        Pause_f := 2;
+    //ポーズ解除の瞬間
+    end else if Pause_f = 3 then begin
+        Pause_f := 0;
+        BGMPlaySt(Stage);//音量もどす
+    end;
+
+    if Pause_f <> 2 then begin//ポーズ中じゃない
+        DDDD1.Clear;
+        //ループ
+        case GameMode of
+            OP      : LoopOP;
+            MSL     : LoopMSL;
+            VS      : LoopVS;
+            TSL     : LoopTSL;
+            PSL     : LoopPSL;
+            HDC     : LoopHDC;
+            CSL     : LoopCSL;
+            DB      : LoopDB;
+            NAMENNAYO : LoopNAMENNAYO;
+        end;
+    end else if Pause_f = 2 then begin
+        if GameMode = DB then begin
+            DDDD1.Clear;
+            DBBlt;
+        end;
+    end;
+
+    //フレームレート表示
+    if FPS_f = True then begin
+        r5 := Bounds(96,88,24,8);
+        DDDraw(1,0,r5,ddsfFont,True);
+        if FPS30_f = True then begin
+            ttt30 := (fps1 div 2);
+            case ttt30 of
+                0..9:begin
+                    r5 := Bounds((ttt30 div 10)*8,0,8,8);
+                    DDDraw(25,0,r5,ddsfFont,True);
+                end;
+                10..99:begin
+                    r5 := Bounds((ttt30 div 10)*8,0,8,8);
+                    DDDraw(25,0,r5,ddsfFont,True);
+
+                    r5 := Bounds((ttt30 mod 10)*8,0,8,8);
+                    DDDraw(25 + 8,0,r5,ddsfFont,True);
+                end;
+            end;
+        end else begin
+            case fps1 of
+                0..9:begin
+                    r5 := Bounds((fps1 div 10)*8,0,8,8);
+                    DDDraw(25,0,r5,ddsfFont,True);
+                end;
+                10..99:begin
+                    r5 := Bounds((fps1 div 10)*8,0,8,8);
+                    DDDraw(25,0,r5,ddsfFont,True);
+
+                    r5 := Bounds((fps1 mod 10)*8,0,8,8);
+                    DDDraw(25 + 8,0,r5,ddsfFont,True);
+                end;
+            end;
+        end;
+    end;
+    //ＦＰＳ３０用
+    if FPSSkip_c = 0 then begin
+        if GameMode <> INIT then begin
+            DDDD1.Flip;
+        end;
+        if FPS30_f = True then FPSSkip_c := 1;
+    end else begin
+        FPSSkip_c := 0;
+    end;
+
+    //WAIT
+    tgt := TimeGetTime;
+    while (tgt < (TempTime2+FRate)) do begin
+        tgt := TimeGetTime;
+    end;
+    temptime2 := TimeGetTime;
+    Done := False;
+
+end;
+
+//キーダウン
+procedure TForm1.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+
+    //ＥＳＣで終了
+    if Key=VK_ESCAPE then begin
+
+        Application.Terminate;
+        Key:=0;
+    //ポーズ
+    end else if (Key = VK_F3) then begin
+        if (KeyPBtn_f = False) and (PauseAble_f = True) then begin
+            if Pause_f = 0 then begin
+                Pause_f := 1;
+            end else begin
+                Pause_f := 3;
+            end;
+            Key:=0;
+        end;
+        KeyPBtn_f := True;
+    //リセット
+    end else if (Key=VK_F1) and (GameMode <> OP)then begin
+
+        DataReset;
+        GameMode := NAMENNAYO;
+        Key:=0;
+    end;
+
+end;
+//キーアップ
+procedure TForm1.FormKeyUp(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+    if Key=VK_F3 then begin
+        KeyPBtn_f := False;
+        Key := 0;
+    end;
+end;
+//フォーム消滅
+procedure TForm1.FormDestroy(Sender: TObject);
+var
+    i:integer;
+begin
+
+    if TBP_f = True then timeEndPeriod(1);
+
+    //ＢＧＭ，ＳＥの解放
+    for i := 0 to BGMNum do begin
+        dsBGM[i].Free;
+        dsBGM[i] := nil;
+    end;
+    for i := 0 to SYSNum do begin
+        dsSYS[i].Free;
+        dsSYS[i] := nil;
+    end;
+    for i := 0 to SENum do begin
+        dsSE[i].Free;
+        dsSE[i] := nil;
+    end;
+end;
+
+////ループども//====================================================================
+//キーコンフィグ//====================================================================
+procedure TForm1.INISet;
+var
+    i:integer;
+    i2:Integer;
+    ////キーコード読み込み//--------------------------------------------------------------------
+    procedure LoadCFG;
+    var
+        IniFile: TIniFile;
+        i: integer;
+    begin
+        //iniファイル読み込み
+        IniFile := TIniFile.Create(ExtractFilePath(Application.ExeName)+'config.ini');
+        //キーコード読み込み
+        KeyCode[0,0] := IniFile.ReadInteger('Key0','U',87);
+        KeyCode[0,1] := IniFile.ReadInteger('Key0','D',83);
+        KeyCode[0,2] := IniFile.ReadInteger('Key0','L',65);
+        KeyCode[0,3] := IniFile.ReadInteger('Key0','R',68);
+        KeyCode[0,4] := IniFile.ReadInteger('Key0','A',66);
+        KeyCode[0,5] := IniFile.ReadInteger('Key0','B',86);
+        KeyCode[0,6] := IniFile.ReadInteger('Key0','C',78);
+        KeyCode[0,7] := IniFile.ReadInteger('Key0','ST',77);
+        KeyCode[1,0] := IniFile.ReadInteger('Key1','U',38);
+        KeyCode[1,1] := IniFile.ReadInteger('Key1','D',40);
+        KeyCode[1,2] := IniFile.ReadInteger('Key1','L',37);
+        KeyCode[1,3] := IniFile.ReadInteger('Key1','R',39);
+        KeyCode[1,4] := IniFile.ReadInteger('Key1','A',98);
+        KeyCode[1,5] := IniFile.ReadInteger('Key1','B',97);
+        KeyCode[1,6] := IniFile.ReadInteger('Key1','C',99);
+        KeyCode[1,7] := IniFile.ReadInteger('Key1','ST',100);
+
+        //ゲームパッド読み込み
+        for i := 0 to 3 do begin
+            JoyCode[i,0] := IniFile.ReadInteger('Joy' + IntToStr(i),'A',1);
+            JoyCode[i,1] := IniFile.ReadInteger('Joy' + IntToStr(i),'B',2);
+            JoyCode[i,2] := IniFile.ReadInteger('Joy' + IntToStr(i),'C',3);
+            JoyCode[i,3] := IniFile.ReadInteger('Joy' + IntToStr(i),'ST',4);
+            JoyCode[i,4] := IniFile.ReadInteger('Joy' + IntToStr(i),'U',5);
+            JoyCode[i,5] := IniFile.ReadInteger('Joy' + IntToStr(i),'D',6);
+            JoyCode[i,6] := IniFile.ReadInteger('Joy' + IntToStr(i),'L',7);
+            JoyCode[i,7] := IniFile.ReadInteger('Joy' + IntToStr(i),'R',8);
+            CBtn_f[i]    := IniFile.ReadBool('Joy' + IntToStr(i),'+',False);
+        end;
+        //フルスクリーン
+        FSc_f := IniFile.ReadBool('System','FullScreen',True);
+        //フレームレート表示
+        FPS_f := IniFile.ReadBool('System','FPS',False);
+        //timebeginperiod
+        TBP_f := IniFile.ReadBool('System','TBP',False);
+        //描画スキップ
+        FPS30_f:= IniFile.ReadBool('System','FPS30',False);
+        //320*240
+        HalfSize_f := IniFile.ReadBool('System','Half',False);
+        //iniファイル解放
+        IniFile.Free;
+    end;
+    ////キャラデータセット//--------------------------------------------------------------------
+    procedure SetDt(sTNo,sNo:integer;sName:string;sFace,sFT,sHP,sBP,sST,sTK,sSp,sCT,sGu,sJSP,sDSP:integer);
+    begin
+        with LoadDt[sTNo].DBC[sNo] do begin
+            //ステータス
+            Face := (sTNo*10)+sFace;
+            FaceType := sFT;
+            Name := sName;
+            dNo := (sTNo*10)+sNo;
+            dHP := sHP;
+            dBP := sBP;
+            dST := sST;
+            dTK := sTK;
+            dSp := sSp - 5;
+            dCT := sCT;
+            dGu := sGu;
+            dJSp:= sJSP;
+            dDSp:= sDSP;
+        end;
+        //チームステータスの平均
+        TeamData[sTNo,0] := TeamData[sTNo,0]+sHP;
+        TeamData[sTNo,1] := TeamData[sTNo,1]+sBP;
+        TeamData[sTNo,2] := TeamData[sTNo,2]+sST;
+        TeamData[sTNo,3] := TeamData[sTNo,3]+sTK;
+        TeamData[sTNo,4] := TeamData[sTNo,4]+sSp;
+        TeamData[sTNo,5] := TeamData[sTNo,5]+sCT;
+        TeamData[sTNo,6] := TeamData[sTNo,6]+sGu;
+
+        TeamData2[sTNo,sNo,0] := sHP;
+        TeamData2[sTNo,sNo,1] := sBP;
+        TeamData2[sTNo,sNo,2] := sST;
+        TeamData2[sTNo,sNo,3] := sTK;
+        TeamData2[sTNo,sNo,4] := sSp;
+        TeamData2[sTNo,sNo,5] := sCT;
+        TeamData2[sTNo,sNo,6] := sGu;
+        TeamData2[sTNo,sNo,7] := sJSP;
+        TeamData2[sTNo,sNo,8] := sDSP;
+
+    end;
+    procedure KBSet(DXI:TDXInput;PNo:integer);
+    var
+        i:integer;
+    begin
+        with DXI.Keyboard do begin
+            for i := 0 to 2 do begin
+                KeyAssigns[isup,i]      :=0;
+                KeyAssigns[isdown,i]    :=0;
+                KeyAssigns[isleft,i]    :=0;
+                KeyAssigns[isright,i]   :=0;
+                KeyAssigns[isbutton1,i] :=0;
+                KeyAssigns[isbutton2,i] :=0;
+                KeyAssigns[isbutton3,i] :=0;
+                KeyAssigns[isbutton4,i] :=0;
+            end;
+        end;
+        if (UseKB < 2) and (DXI.Joystick.ButtonCount = 0) then begin
+            KB[UseKB]:=PNo;
+            inc(UseKB);
+            JoyCode[PNo,0] := 1;
+            JoyCode[PNo,1] := 2;
+            JoyCode[PNo,2] := 3;
+            JoyCode[PNo,3] := 4;
+        end;
+    end;
+    procedure KBSet2(tSetNo:integer;DXI:TDXInput);
+    begin
+        with DXI.Keyboard do begin
+            KeyAssigns[isup,0]      :=KeyCode[tSetNo,0];
+            KeyAssigns[isdown,0]    :=KeyCode[tSetNo,1];
+            KeyAssigns[isleft,0]    :=KeyCode[tSetNo,2];
+            KeyAssigns[isright,0]   :=KeyCode[tSetNo,3];
+            KeyAssigns[isbutton1,0] :=KeyCode[tSetNo,4];
+            KeyAssigns[isbutton2,0] :=KeyCode[tSetNo,5];
+            KeyAssigns[isbutton3,0] :=KeyCode[tSetNo,6];
+            KeyAssigns[isbutton4,0] :=KeyCode[tSetNo,7];
+        end;
+    end;
+begin
+    //乱数初期化
+    Randomize;
+
+    //INIT読み込み
+    LoadCFG;
+
+    //キーボードセット
+    KB[0]:=-1;
+    KB[1]:=-1;
+    UseKB:= 0;
+
+    KBSet(DXInput1,0);
+    KBSet(DXInput2,1);
+    KBSet(DXInput3,2);
+    KBSet(DXInput4,3);
+
+    //キーボードiにキーを設定
+    for i := 0 to 1 do begin
+        case KB[i] of
+            0:KBSet2(i,DXInput1);
+            1:KBSet2(i,DXInput2);
+            2:KBSet2(i,DXInput3);
+            3:KBSet2(i,DXInput4);
+        end;
+    end;
+
+    //ステータスセット
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(0,0,'くにお'    ,0, 0,40,12, 9, 7, 7, 8, 7,Snat,Skan);
+    SetDt(0,1,'ひろし'    ,1, 0,28, 7, 7, 9, 8, 9,12,Sbun,Ssun);
+    SetDt(0,2,'こうじ'    ,2, 0,28, 7, 7, 9, 9,12, 8,Sina,Ssuk);
+    SetDt(0,3,'いちろう'  ,3, 0,32, 8, 7, 9,12, 8, 7,Smoz,Skak);
+    SetDt(0,4,'しんいち'  ,4, 0,32, 8, 9,12, 8, 7, 7,Sass,Sobu);
+    SetDt(0,5,'みつひろ'  ,5, 0,36, 9,12, 8, 7, 7, 7,Skas,Sapp);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(1,0,'りき'      ,0, 0,36,12, 6, 8, 5, 6, 7,Sbun,Sapp);
+    SetDt(1,1,'とおる'    ,5, 0,28, 8,10,10, 5, 5, 7,Sbuy,Skan);
+    SetDt(1,2,'あきら'    ,3, 0,24, 7, 4,11,12, 6, 6,Snat,Ssuk);
+    SetDt(1,3,'まさひこ'  ,2, 0,20, 6, 3,11, 8,11, 8,Skas,Sbuu);//obu
+    SetDt(1,4,'なりたか'  ,1, 0,16, 5, 5,11, 7, 7,13,Sbuy,Swaa);
+    SetDt(1,5,'しんたろう',4, 0,24, 7, 6,15, 7, 4, 7,Shoe,Skak);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(2,0,'じえむす'  ,0, 1,48,11,12, 4, 4, 6, 4,Sina,Ssun);
+    SetDt(2,1,'すこっと'  ,2, 0,36, 6,10, 6, 6,10, 5,Shoe,Skan);
+    SetDt(2,2,'はわあど'  ,5, 0,44, 8,15, 5, 4, 5, 4,Smoz,Ssuk);
+    SetDt(2,3,'じおじ'    ,4, 0,40, 7,12, 9, 5, 5, 4,Sbun,Sbuu);
+    SetDt(2,4,'ろばあと'  ,1, 0,36, 6,10, 6, 5, 7, 9,Snat,Sobu);
+    SetDt(2,5,'りちあど'  ,3, 0,40, 7,10, 6, 9, 6, 4,Sbuy,Sapp);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(3,0,'らはまあん',0, 3,20, 9, 7,10,11, 5,13,Shoe,Sobu);
+    SetDt(3,1,'むはまど'  ,1, 0,16, 6, 7,10,11, 5,16,Sbun,Skan);
+    SetDt(3,2,'さったある',3, 0,16, 6, 7,10,14, 5,13,Smoz,Ssun);
+    SetDt(3,3,'へっだ'    ,2, 0,16, 6, 7,10,11, 8,13,Sina,Sbuu);
+    SetDt(3,4,'あふだら'  ,4, 0,16, 6, 7,13,11, 5,13,Sass,Skak);
+    SetDt(3,5,'するたあん',5, 0,16, 6,10,10,11, 5,13,Skas,Swaa);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(4,0,'へいるまん',0, 1,64,14, 9, 3, 3, 7, 8,Smoz,Swaa);
+    SetDt(4,1,'りむっそん',4, 0,52, 9, 9,10, 5, 5, 8,Shoe,Sapp);
+    SetDt(4,2,'よあんせん',5, 0,56,10,13, 5, 3, 6, 8,Sbuy,Sobu);
+    SetDt(4,3,'ないまん'  ,3, 0,52, 9, 7, 6,10, 7, 7,Snat,Sbuu);
+    SetDt(4,4,'とろっせん',1, 0,44, 7, 8, 6, 5, 8,14,Sass,Ssun);
+    SetDt(4,5,'けっこねん',2, 0,48, 8, 6, 6, 6,12, 9,Skas,Skak);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(5,0,'らおちぇん',0, 2,40,11,10, 7,10,13, 6,Sbuy,Skak);
+    SetDt(5,1,'うぇんはお',3, 0,36, 8,10, 7,13,13, 6,Sbun,Sobu);
+    SetDt(5,2,'りいふぁん',2, 0,36, 8,10, 7,10,16, 6,Shoe,Swaa);
+    SetDt(5,3,'たあうぇい',1, 0,36, 8,10, 7,10,13, 9,Snat,Sapp);
+    SetDt(5,4,'しゃおちん',5, 0,36, 8,13, 7,10,13, 6,Smoz,Sbuu);
+    SetDt(5,5,'ゆんつぁい',4, 0,36, 8,10,10,10,13, 6,Sina,Skan);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(6,0,'もるどふ'  ,0, 3,56,16, 8, 7, 4,10, 8,Sass,Ssuk);
+    SetDt(6,1,'こりあのふ',2, 0,40,10, 5,10, 7,15, 9,Sbun,Swaa);
+    SetDt(6,2,'みれいにん',5, 0,48,12,12, 9, 4, 9, 8,Skas,Sbuu);
+    SetDt(6,3,'いるちょふ',3, 0,44,11, 6,10,11,10, 7,Sina,Sapp);
+    SetDt(6,4,'ろふすきい',4, 0,44,11, 8,14, 6, 8, 8,Smoz,Skan);
+    SetDt(6,5,'まれんこふ',1, 0,36, 9, 7,10, 6,11,14,Sbuy,Ssun);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(7,0,'んじょも'  ,0, 2,44,13, 9, 5,11, 9, 9,Sbuy,Sbuu);
+    SetDt(7,1,'むば'      ,4, 0,36, 9, 9,10,12, 8, 9,Snat,Swaa);
+    SetDt(7,2,'びりまな'  ,1, 0,32, 8, 7, 7,12,10,14,Smoz,Sobu);
+    SetDt(7,3,'みこんべ'  ,5, 0,40,10,12, 6,11, 8, 9,Shoe,Ssuk);
+    SetDt(7,4,'にぱれれ'  ,2, 0,32, 8, 7, 7,13,13,10,Sass,Sapp);
+    SetDt(7,5,'もっきい'  ,3, 0,36, 9, 7, 7,16, 9, 9,Skas,Skan);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(8,0,'ういりあむ',0, 1,60,15, 8, 8, 7,11,10,Skas,Ssuk);
+    SetDt(8,1,'じょん'    ,1, 0,56,12, 8, 8, 7,11,13,Snat,Ssun);
+    SetDt(8,2,'まいける'  ,2, 0,56,12, 8, 8, 7,14,10,Shoe,Sbuu);
+    SetDt(8,3,'らんでい'  ,4, 0,56,12, 8,11, 7,11,10,Sbun,Skak);
+    SetDt(8,4,'びる'      ,3, 0,56,12, 8, 8,10,11,10,Sbuy,Swaa);
+    SetDt(8,5,'すていぶ'  ,5, 0,56,12,11, 8, 7,11,10,Sina,Sobu);
+  //SetDt(T,C,'名前'      ,F,FT,HP,BP,ST,TK,Sp,CT,Gu, JSP, DSP);
+    SetDt(9,0,'くにお'    ,0, 0,56,14,12,12,12,12,12,Snat,Skan);
+    SetDt(9,1,'ひろし２'  ,1, 0,44,12,12,12,12,12,14,Sbun,Ssun);
+    SetDt(9,2,'こうじ'    ,2, 0,44,12,12,12,12,14,12,Sina,Ssuk);
+    SetDt(9,3,'いちろう'  ,3, 0,48,12,12,12,14,12,12,Smoz,Skak);
+    SetDt(9,4,'しんいち'  ,4, 0,48,12,12,14,12,12,12,Sass,Sobu);
+    SetDt(9,5,'みつひろ'  ,5, 0,52,12,14,12,12,12,12,Skas,Sapp);
+
+    //チームステータスの表示に使う値（全員の平均値）
+    for i2 := 0 to 8 do begin
+        for i := 0 to 6 do begin
+            if i = 0 then begin
+                //HP
+                TeamData[i2,i] := TeamData[i2,i] * 2 div 24;
+            end else begin
+                TeamData[i2,i] := TeamData[i2,i] * 2 div 6 ;
+            end;
+        end;
+    end;
+
+end;
+
+//リセット//====================================================================
+procedure TForm1.LoopNamennayo;
+var
+    SrcRect: TRect;
+begin
+
+    {    サーフェースのどの部分をコピーするか計算    }
+    //暗転
+    DDDD1.BackBuffer.FillRect(Bounds(0,0,320*Mag,240*Mag),0);
+    SrcRect := Bounds(136,88,24,16);
+    //DDDraw(296,224,SrcRect,ddsfFont,True);
+    WaitTime  := 30;
+    OPBGM_c := 25;
+    GameMode := OP;
+    //なめんなよ
+    if Per100(50) then begin
+        SE(37);
+    end else begin
+        SE(36);
+    end;
+
+end;
+//オープニング//====================================================================
+procedure TForm1.LoopOP;
+var
+    SrcRect: TRect;
+begin
+
+    {    サーフェースのどの部分をコピーするか計算    }
+    if (OPBGM_c = 26) and (Init_f = True) then begin
+        SrcRect := Bounds(0,0,320,240);
+        DDDraw(0,0,SrcRect,ddsfOP,False);    
+        SYSBGM(0);
+        OPBGM_c := 27;
+    end else if (OPBGM_c < 26) then begin
+        //スタートまで若干間を持たす
+        inc(OPBGM_c);
+    end else begin
+        SrcRect := Bounds(0,0,320,240);
+        DDDraw(0,0,SrcRect,ddsfOP,False);
+        case HardClear of
+            0:StrDraw(8,8,'ぱすわーど　にしむらなりたか＠');
+            1:StrDraw(8,8,'ぱすわーど　おわるうつすおわる＠');
+            2:StrDraw(8,8,'ぱすわーど　２Ｐじゃんぷおしながらえんせいけってい＠');
+        end;
+        if P[0].KeyP = True then begin
+            OP_f := False;
+            GameMode  := MSL;
+            SYSBGM(0);
+            PNum := 0;
+            CurCol[0] := 0;
+            CurCol[1] := 0;
+            CurPos[0] := 0;
+            CurPos[1] := GameLv;
+
+            inc(MSLPicNo);//MSLの画像
+            if MSLPicNo > 12 then MSLPicNo := 1;
+            //SE(1);
+        end;
+    end;
+end;
+//ゲームモード選択//====================================================================
+procedure TForm1.LoopMSL;
+var
+    SrcRect : TRect;
+    r3: TRect;
+    i       :Integer;
+    i2      :integer;
+    BX :integer;
+    BY :integer;
+    DX :integer;
+    DY :integer;
+
+    procedure BDSet(tBX:integer;tBY:integer;tDX:integer;tDY:integer);
+    begin
+        BX := tBX;
+        BY := tBY;
+        DX := tDX;
+        DY := tDY;
+    end;
+    //ショートコント用描画（ボール）
+    procedure MSLBDraw(dX,dY,bNo:integer);
+    begin
+        //ボールの形
+        case bNo mod 10 of
+            0:r3 := Bounds(0, 0, 16, 16);//●
+            1:r3 := Bounds(128, 0, 16, 16);//　＼
+            2:r3 := Bounds(144, 0, 16, 16);//　／
+            3:r3 := Bounds(128, 16, 16, 16);//　ー
+            4:r3 := Bounds(144, 16, 16, 16);//　・
+        end;
+        //必殺じゃないとき
+        if bNo div 10 = 1 then begin
+            r3.Top := r3.Top + 48;
+            r3.Bottom := r3.Bottom + 48;
+        end;
+        DDDraw(dX,dY,r3,ddsfDBItem,True);
+    end;
+    //ショートコント用描画（キャラ）
+    procedure MSLDraw(dX,dY,fNo,mNo,Muki:integer;tNo:integer = 0);
+    const
+        CharY = 15;
+    var
+        cX      :integer;
+        cY      :integer;
+        mRevX :integer;
+        mRevY :integer;
+        bltX:integer;
+        bltY:integer;
+        //顔
+        procedure r3Set();
+        begin
+            if Muki = Migi then begin
+                r3 := Bounds(48*cX,32*cY,48,32);
+            end else if Muki = Hidari then begin//補正が必要
+                r3 := Bounds(((ddsfDBBody[tNo].Width div Mag)-(48*cX)-48),32*(cY+CharY),48,32);
+            end;
+        end;
+        procedure MSLFDraw(ftype:integer);
+        var
+            sr :TRect;
+            dr :TRect;
+            RevX :integer;
+            RevY :integer;
+            procedure srSet(tL,tW:integer);
+            begin
+                if Muki = Migi then begin
+                    sr.Left := tL;
+                    sr.Right:= tL+tW;
+                end else if Muki = Hidari then begin
+                    sr.Right:= 144-tL;
+                    sr.Left := 144-tL-tW;
+                end;
+            end;
+        begin
+            if FPSSkip_c = 0 then begin
+                RevX:= 17;
+                RevY:= 0;
+                if (ftype >= 1) and (ftype <= 5) then begin
+                    sr.Top := (10 * fNo) + (60 * tNo);
+                    sr.Bottom := sr.Top+10;
+                    case ftype of
+                        1:begin//正面
+                            srSet(0,16);
+                        end;
+                        2:begin//横
+                            srSet(16,16);
+                            //屈み
+                            if (mNo = 309) then begin
+                                sr.Bottom := sr.Top+9;
+                            end else if (mNo = 310) then begin
+                                sr.Bottom := sr.Top+8;
+                            end;
+                        end;
+                        3:begin//倒れ、飲み
+                            RevX:= 0;
+                            RevY:= 16;
+                            srSet(32,8);
+                        end;
+                        4:begin//勝ち
+                            srSet(56,16);
+                        end;
+                        5:begin//後ろ
+                            srSet(40,16);
+                        end;
+                    end;
+                    if Muki = Hidari then begin
+                        RevX := 48 - RevX - (sr.Right-sr.Left);
+                    end;
+                    sr := Rect(sr.Left*Mag,sr.Top*Mag,sr.Right*Mag,sr.Bottom*Mag);
+                    dr := Bounds((bltX+RevX)*Mag,(bltY+RevY)*Mag,sr.Right-sr.Left,sr.Bottom-sr.Top);
+                    ddsfDBFace.Put(dr,sr,DDBLT_WAIT or DDBLT_KEYSRC,fx);
+
+                end;
+            end;
+        end;
+
+    begin
+        cX := (mNo div 100);
+        cY := (mNo mod 100);
+        mRevX := DBMNo[cX,cY,1];
+        mRevY := DBMNo[cX,cY,2];
+        bltX := dX+(mRevX*Muki);
+        bltY := dY+mRevY;
+
+        //顔先描画
+        if (DBMNo[cX,cY,3] div 10 = 1)
+        or ((DBMNo[cX,cY,3] div 10 = 2) and ((fNo <> 1)and(fNo <> 4))) then begin
+            MSLFDraw((DBMNo[cX,cY,3] mod 10));
+        end;
+
+        //いちろう(転がり、うつぶせ、吹っ飛び)
+        if (fNo = 3) and (mNo >= 400) and (mNo <= 406) then begin
+            //描画元画像一個右にシフト
+            cX := cX + 1;
+            r3Set;
+            cX := cX - 1;
+        end else begin
+            r3Set;
+        end;
+
+        //描画
+        DDDraw(bltX,bltY,r3,ddsfDBBody[tNo],True);
+
+        //顔後描画
+        if (DBMNo[cX,cY,3] div 10 = 0)
+        or ((DBMNo[cX,cY,3] div 10 = 2) and ((fNo = 1)or(fNo = 4))) then begin
+            MSLFDraw((DBMNo[cX,cY,3] mod 10));
+        end;
+    end;
+begin
+
+    //背景
+    SrcRect := Bounds(0,0,320,240);
+    DDDraw(0,0,SrcRect,ddsfMSL,False);
+    //キー入力
+    if P[0].KeyU = True then begin
+        SE(0);
+        if CurPos[0] > 0 then Dec(CurPos[0]);
+    end else if P[0].KeyD = True then begin
+        SE(0);
+        if CurPos[0] < 2 then Inc(CurPos[0]);
+    end;
+    if P[0].KeyL = True then begin
+        SE(0);
+        if CurPos[1] > 0 then Dec(CurPos[1]);
+    end else if P[0].KeyR = True then begin
+        SE(0);
+        if CurPos[1] < 2 then Inc(CurPos[1]);
+    end;
+    if P[0].KeyP = True then begin
+        VS_c := 0;
+        StBer_c[0] := 0;
+        StBer_c[1] := 0;
+        BGMStop;
+        Ball.BColor := BCol1;
+        GameLv := CurPos[1];//なんいど012
+        NODead_f:= True;
+
+        for i2 := 0 to 1 do begin
+            for i := 0 to 2 do begin
+                HDCDt[i2,i] := 0;//ハンデなし
+            end;
+        end;
+
+        if CurPos[0] = 0 then begin
+            Ensei_f := True;
+            Stage := 1;
+            if P[1].KeyJ2 = True then Stage := 9;
+
+            SE(17);
+            GameMode  := VS;
+            CPU_f := True;
+            P[0].TeamNo := 0;//一応いまのところ熱血のみ
+            P[1].TeamNo := Stage;//兼ステージ
+            //やさしいのときはひっさつたいみんぐハンデやさしいと同じ
+            if GameLv = 0 then begin
+                HDCDt[0,2] := 1;
+            end;
+
+        //対抗試合
+        end else begin
+            Ensei_f := False;
+            Stage := 0;
+            GameMode  := TSL;
+            SYSBGM(1);
+            CPU_f := False;
+            if CurPos[0] = 1 then CPU_f := True;//VSCPU
+            
+            for i2 := 0 to 1 do begin
+                P[i2].TeamNo := -1;//未決定状態
+                CurCol[i2] := 0;
+                CurPos[i2] := 0;
+            end;
+        end;
+
+    end;
+    //カーソル点滅
+    inc(CurCol[0]);
+    if CurCol[0] >= CurColMax then CurCol[0] := 0;
+    if CurCol[0] < CurColHalf then begin
+        SrcRect := Bounds(120, 88, 8, 8);
+        BDSet(64,56,0,16);
+        //カーソル描画
+        DDDraw(BX,BY+(CurPos[0])*DY,SrcRect,ddsfFont,True);
+
+        BDSet(64,200,64,0);
+        //カーソル描画
+        DDDraw(BX+(CurPos[1])*DX,BY,SrcRect,ddsfFont,True);
+    end;
+
+    //ショートコント風キャラ表示
+    case MSLPicNo of
+        0:begin
+            for i := 0 to 5 do begin
+                MSLDraw(16+(48*i),128,(5-i),304,Migi);
+            end;
+        end;
+        1:begin
+            //キャラ表示
+            MSLDraw(32,128,0,105,Migi);
+            MSLDraw(176-64,80,0,405,Hidari);//MSLDraw(,,,,Migi);
+            MSLDraw(224-64,88,0,405,Hidari);
+            MSLDraw(272-48,96,3,405,Hidari);
+            MSLBDraw(304-32,112+32,3);
+        end;
+        2:begin
+            MSLDraw(208,80,4,111,Hidari);
+            MSLDraw(208-48,128,0,114,Migi);
+            MSLDraw(208-96,88,5,107,Migi);
+            MSLDraw(208-96-48,128,3,310,Migi);
+            MSLBDraw(208-96,128,4);
+        end;
+        3:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,200,Hidari,5);
+            MSLDraw(0,8,3,405,Migi);
+        end;
+        4:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,200,Hidari,3);
+            MSLDraw(0,8,3,405,Migi);
+        end;
+        5:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,200,Hidari,7);
+            MSLDraw(0,8,3,405,Migi);
+        end;
+        6:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,200,Hidari,4);
+            MSLDraw(0,8,3,405,Migi);
+        end;
+        7:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,200,Hidari,6);
+            MSLDraw(0,8,3,405,Migi);
+        end;
+        8:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,200,Hidari,2);
+            MSLDraw(0,8,3,405,Migi);
+        end;
+        9:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,200,Hidari,8);
+            MSLDraw(0,8,3,405,Migi);
+        end;
+        10:begin
+            for i := 0 to 2 do MSLDraw(16+48*(5-i),128,i,100,Hidari,1);
+            MSLDraw(48,128,3,308,Migi);
+        end;
+        11:begin
+            MSLDraw(136,128,3,304,Hidari);
+        end;
+        12:begin
+            MSLDraw(-16,128,1,102,Hidari);
+            MSLDraw(136,128,3,304,Hidari);
+        end;
+    end;
+
+end;
+
+//マッチアップ
+procedure TForm1.LoopVS;
+var
+    //画像表示用
+    SrcRect : TRect;
+    BX :integer;
+    BY :integer;
+    DX :integer;
+    DY :integer;
+    //ステータスバー用
+    StBerData:integer;
+    //ループ用
+    i       :Integer;
+    i2      :integer;
+    //描画用変数の代入を楽にするもの
+    procedure BDSet(tBX:integer;tBY:integer;tDX:integer;tDY:integer);
+    begin
+        BX := tBX;
+        BY := tBY;
+        DX := tDX;
+        DY := tDY;
+    end;
+
+begin
+
+    //背景
+    SrcRect := Bounds(0,0,320,240);
+    DDDraw(0,0,SrcRect,ddsfVS,False);
+    inc(VS_c);
+    if StBer_c[0] < 64 then begin
+        inc(StBer_c[0]);
+        StBer_c[1] := StBer_c[0];
+    end;
+
+    //ステージ
+    SrcRect := Bounds(((Stage) * 8), 0, 8, 8);
+    DDDraw(184,56,SrcRect,ddsfFont,True);
+    
+    //チームステータス
+
+    //HPは1/4にしておく　データ入れ終わった時点で1/6にしておく
+    for i2 := 0 to 1 do begin
+        BDSet(112,144,136,8);
+        for i := 0 to 6 do begin
+            //謎の軍団の難易度によるステータス変更
+            if (i2 = 1) and (Stage = 9) and (GameLv <> 2) then begin
+                //やさしい
+                if GameLv = 0 then begin
+                    StBerData := TeamData[0,i];//ノーマル熱血と同じ
+                //ふつう
+                end else begin
+                    if i <> 0 then begin
+                        StBerData := TeamData[0,i];//ノーマル熱血と同じ
+                    end else begin
+                        StBerData := TeamData[P[i2].TeamNo,i];
+                    end;
+                end;
+            end else begin
+                StBerData := TeamData[P[i2].TeamNo,i];
+            end;
+
+            if (StBer_c[0] div 3) <= StBerData then begin
+                SrcRect := Bounds(120, 184, StBer_c[0] div 3, 8);
+            end else begin
+                SrcRect := Bounds(120, 184, StBerData, 8);
+            end;
+            DDDraw(BX+(i2*DX),BY+(i*DY),SrcRect,ddsfDBEtc,True);
+        end;
+
+        BDSet(56,80,128,0);
+        //国旗+チーム名
+        SrcRect := Bounds(80,96+((P[i2].TeamNo)*8), 80, 8);
+        DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBEtc,True);
+
+        //キャプテン画像
+        BDSet(80,104,136,0);
+        SrcRect := Bounds(((P[i2].TeamNo div 7)*80)+(i2*32),((P[i2].TeamNo mod 7) * 32), 32, 32);
+        DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBEtc,True);
+    end;
+
+    //ポジション変更へ
+    if (VS_c > 380) or (P[0].KeyP = True) then begin
+        GameMode  :=PSL;//ポジションセレクトへ
+        CPSL_c := -30;//PSLでＣＰＵのカーソルが動くまでの間
+        CPSLMember := Random(5);//ＣＰＵオート選択
+        If Stage = 1 then begin
+            if Not((CPSLMember >= 2) and (CPSLMember <= 4)) then begin
+                //なりたかを入れやすく
+                CPSLMember := Random(5);//ＣＰＵオート選択
+            end;
+        end else If (Stage = 3) or (Stage = 8) then begin
+            if ((CPSLMember >= 1) and (CPSLMember <= 3))  then begin
+                //むはまどorじょんを入れやすく
+                CPSLMember := Random(5);//ＣＰＵオート選択
+            end;
+        end;
+        //データ初期化
+        for i2 := 0 to 1 do begin
+            for i := 0 to 5 do begin
+                PSLData[i2,i] := -1;
+                PSLData2[i2,i] := -1;
+            end;
+            StBer_c[i2] := 0;
+            CurCol[i2] := 0;
+            CurPos[i2] := 0;
+            PSLNo[i2] := 0;
+            PSLCol[i2] := 0;
+        end;
+        SEStop;
+        SYSBGM(1);
+    end;
+
+end;
+
+//ポジション変更/====================================================================
+procedure TForm1.LoopPSL;
+var
+    //画像描画用
+    SrcRect : TRect;
+    i       :Integer;
+    i2      :integer;
+    BX :integer;
+    BY :integer;
+    DX :integer;
+    DY :integer;
+    //選手名前描画用
+    NameS:integer;
+    NameSX:integer;
+    NameSY:integer;
+    //顔の転送元座標
+    F1 :integer;
+    F2 :integer;
+    //ステータスバー用
+    StBerData:integer;
+
+    //画像転送するための変数への代入を楽にするような感じのもの
+    procedure BDSet(tBX:integer;tBY:integer;tDX:integer;tDY:integer);
+    begin
+        BX := tBX;
+        BY := tBY;
+        DX := tDX;
+        DY := tDY;
+    end;
+    //その２
+    procedure BSet(tBX:integer;tBY:integer);
+    begin
+        BY := tBY;
+        if i2 = 0 then begin
+            BX := tBX;
+        end else begin
+            BX := (320 - tBX)-8;
+        end;
+    end;
+    //その３
+    procedure BSet2(tBX:integer;tBY:integer);
+    begin
+        BY := tBY + 1;
+        if i2 = 0 then begin
+            BX := tBX-1;
+        end else begin
+            BX := (320 - tBX)-16+1;
+        end;
+    end;
+    //じゅんびＯＫ
+    procedure GetReady;
+    var
+        i       :Integer;
+        i2      :integer;
+    begin
+        for i2 := 0 to 1 do begin
+            for i := 0 to 5 do begin
+                P[i2].DBC[i] := LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]];
+                //謎の軍団の難易度によるステータス変更
+                if (i2 = 1) and (Stage = 9) and (GameLv <> 2) then begin
+                    //やさしい
+                    if GameLv = 0 then begin
+                        //ノーマル熱血と同じ
+                        P[i2].DBC[i] := LoadDt[0].DBC[PSLData[i2,i]];
+                        P[i2].DBC[i].Face := LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].Face;
+                        P[i2].DBC[i].dNo := LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].dNo;
+                    //ふつう
+                    end else begin
+                        //ＨＰのみ謎と同じ
+                        P[i2].DBC[i] := LoadDt[0].DBC[PSLData[i2,i]];
+                        P[i2].DBC[i].Face := LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].Face;
+                        P[i2].DBC[i].dNo := LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].dNo;
+                        P[i2].DBC[i].dHP := LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].dHP;
+                    end;
+                end;
+
+                //ＨＰ増加ハンディキャップ
+                if HDCDt[i2,0] = 1 then begin
+                    //150%
+                    P[i2].DBC[i].dHP := P[i2].DBC[i].dHP * 3 div 2;
+                end else if HDCDt[i2,0] = 2 then begin
+                    //200%
+                    P[i2].DBC[i].dHP := P[i2].DBC[i].dHP * 2;
+                end;
+
+                //キャプテンナンバー
+                if P[i2].DBC[i].dNo mod 10 = 0 then P[i2].CapNo := i;
+                P[i2].Cap_f := True;
+
+                //初期配置
+                if i = 3 then begin
+                    if i2 = 0 then begin
+                        P[i2].DBC[i].X := 300*100;
+                    end else begin
+                        P[i2].DBC[i].X := 132*100;
+                    end;
+                    P[i2].DBC[i].Z := 100*100;
+                    P[i2].DBC[i].Muki := Hidari;
+                    P[i2].DBC[i].Muki2 := Shita;
+                    P[i2].DBC[i].Pos := 2;
+                end else if i = 4 then begin
+                    if i2 = 0 then begin
+                        P[i2].DBC[i].X := 320*100;
+                    end else begin
+                        P[i2].DBC[i].X := 112*100;
+                    end;
+                    P[i2].DBC[i].Z := 8*100;
+                    P[i2].DBC[i].Muki := Hidari;
+                    P[i2].DBC[i].Muki2 := Ue;
+                    P[i2].DBC[i].Pos := 3;
+                end else if i = 5 then begin
+                    if i2 = 0 then begin
+                        P[i2].DBC[i].X := 408*100;
+                    end else begin
+                        P[i2].DBC[i].X := 24*100;
+                    end;
+                    P[i2].DBC[i].Z := 56*100;
+                    P[i2].DBC[i].Muki := Hidari;
+                    P[i2].DBC[i].Muki2 := None;
+                    P[i2].DBC[i].Pos := 4;
+                end else begin
+                    P[i2].DBC[i].Muki := Migi;
+                    P[i2].DBC[i].Muki2 := None;
+
+                    case i of
+                        0:begin
+                            P[i2].DBC[i].X := 14000;
+                            P[i2].DBC[i].Z := 5600;
+                        end;
+                        1:begin
+                            P[i2].DBC[i].X := 9000;
+                            P[i2].DBC[i].Z := 8000;
+                        end;
+                        2:begin
+                            P[i2].DBC[i].X := 8000;
+                            P[i2].DBC[i].Z := 3200;
+                        end;
+                    end;
+                    if i2 = 1 then begin
+                        P[i2].DBC[i].X := 43200-P[i2].DBC[i].X;
+                    end;
+                    P[i2].DBC[i].Pos := 1;
+                end;
+
+                if i2 = 1 then P[i2].DBC[i].Muki := -P[i2].DBC[i].Muki;
+
+            end;
+
+        end;
+        P[0].pNo := 0;
+        P[1].pNo := 0;
+        //ボールデータの初期化
+        with Ball do begin
+            Motion := BBound;
+            HoldChar := 20;
+            X := 21500;
+            Z := 5600;
+            Y := 0;
+            dZ := 0;
+            dX := 0;
+            dY := 500+Random(200);
+        end;
+        BGMStop;
+
+        Ready_c := 180;
+        GameSet_c := 0;
+        Camera := 21600;
+        GameMode  :=DB;
+
+    end;
+begin
+    //背景
+    SrcRect := Bounds(0,0,320,240);
+    DDDraw(0,0,SrcRect,ddsfPSL,False);
+    for i2 := 0 to 1 do begin
+        if (i2 = 1) and (CPU_f = True) then begin
+            //謎の軍団以外
+            if Stage <> 9 then begin
+                P[i2].KeyU := False;
+                P[i2].KeyD := False;
+                P[i2].KeyL := False;
+                P[i2].KeyR := False;
+                P[i2].KeyP := False;
+                P[i2].KeyK := False;
+                //CPUオート選択
+                Inc(CPSL_c);
+                if CPSL_c = -1 then begin
+                    P[i2].KeyP := True;
+                end else if (CPSL_c >= 10) and (CPSLMember > 0) then begin
+                    P[i2].KeyR := True;
+                    dec(CPSLMember);
+                    CPSL_c := 0;
+                    if CPSLMember = 0 then CPSL_c := 20;
+                end else if CPSL_c >= 30 then begin
+                    P[i2].KeyP := True;
+                    CPSL_c := 0;
+                end;
+            //謎の軍団
+            end else begin
+                //１Ｐと完全にリンク（メンバー同じになる）
+                P[i2].KeyU := P[0].KeyU;
+                P[i2].KeyD := P[0].KeyD;
+                P[i2].KeyL := P[0].KeyL;
+                P[i2].KeyR := P[0].KeyR;
+                P[i2].KeyP := P[0].KeyP;
+                P[i2].KeyK := P[0].KeyK;
+            end;
+        end;
+        //キー入力
+        if (PSLNo[i2] <= 5) then begin
+            if P[i2].KeyU = True then begin
+                SE(0);
+                CurCol[i2] := 0;
+                if CurPos[i2] > 2 then begin
+                    if PSLData2[i2,(CurPos[i2]-3)] = -1 then begin
+                        Dec(CurPos[i2],3);
+                        StBer_c[i2] := 0;
+                    end;
+                end;
+            end else if P[i2].KeyD = True then begin
+                SE(0);
+                CurCol[i2] := 0;
+                if CurPos[i2] < 3 then begin
+                    if PSLData2[i2,(CurPos[i2]+3)] = -1 then begin
+                        Inc(CurPos[i2],3);
+                        StBer_c[i2] := 0;
+                    end;
+                end;
+            end else if P[i2].KeyL = True then begin
+                SE(0);
+                CurCol[i2] := 0;
+                StBer_c[i2] := 0;
+                for i := 0 to 5 do begin
+                    Dec(CurPos[i2]);
+                    if CurPos[i2] < 0 then CurPos[i2] := 5;
+                    if PSLData2[i2,CurPos[i2]] = -1 then Break;
+                end;
+            end else if P[i2].KeyR = True then begin
+                SE(0);
+                CurCol[i2] := 0;
+                StBer_c[i2] := 0;
+                for i := 0 to 5 do begin
+                    Inc(CurPos[i2]);
+                    if CurPos[i2] > 5 then CurPos[i2] := 0;
+                    if PSLData2[i2,CurPos[i2]] = -1 then Break;
+                end;
+            end;
+        end;
+        if P[i2].KeyP = True then begin
+            if PSLNo[i2] < 6 then begin
+                PSLData[i2,PSLNo[i2]] := CurPos[i2];
+                PSLData2[i2,CurPos[i2]] := PSLNo[i2];
+                Inc(PSLNo[i2]);
+                CurCol[i2] := 0;
+                SE(38);
+                if PSLNo[i2] < 6 then begin
+                    StBer_c[i2] := 0;
+                    for i := 0 to 5 do begin
+                        if PSLData2[i2,(CurPos[i2] + i) mod 6] = -1 then begin
+                            CurPos[i2] := (CurPos[i2] + i) mod 6;
+                            Break;
+                        end;
+                    end;
+                end;
+            end;
+        end else if P[i2].KeyK = True then begin
+            //全決定後のキャンセルは初期化
+            if PSLNo[i2] = 6 then begin
+                SE(38);
+                PSLNo[i2] := 0;
+                CurPos[i2] := 0;
+                CurCol[i2] := 0;
+                StBer_c[i2] := 0;
+                for i := 0 to 5 do begin
+                    PSLData[i2,i] := -1;
+                    PSLData2[i2,i] := -1;
+                end;
+            end else if PSLNo[i2] > 0 then begin
+                Dec(PSLNo[i2]);
+                StBer_c[i2] := 0;
+                CurCol[i2] := 0;
+                CurPos[i2] := PSLData[i2,PSLNo[i2]];
+                PSLData[i2,PSLNo[i2]] := -1;
+                PSLData2[i2,CurPos[i2]] := -1;
+            end;
+        end;
+    end;
+
+    for i2 := 0 to 1 do begin
+
+        //カーソル点滅
+        inc(CurCol[i2]);
+        if CurCol[i2] >= CurColMax then CurCol[i2] := 0;
+        if (PSLNo[i2] <= 5) and (CurCol[i2] < CurColHalf) then begin
+            SrcRect := Bounds(120, 88, 8, 8);
+            if i2 = 0 then begin
+                BDSet(16,112,48,8);
+            end else begin
+                BDSet(168,112,48,8);
+            end;
+            //カーソル描画
+            DDDraw(BX+(CurPos[i2] mod 3)*DX,BY+(CurPos[i2] div 3)*DY,SrcRect,ddsfFont,True);
+        end;
+
+        //ポジション番号点滅
+        inc(PSLCol[i2]);
+        if PSLCol[i2] >= CurColMax then PSLCol[i2] := 0;
+        for i := 0 to 5 do begin
+            if (PSLNo[i2] <> i) 
+            or (PSLCol[i2] < CurColHalf) then begin
+                case i of
+                    0:begin
+                        SrcRect := Bounds(24, 88, 8, 8);
+                        BSet(144, 72);
+                    end;
+                    1:begin
+                        SrcRect := Bounds(24, 88, 8, 8);
+                        BSet(120, 72);
+                    end;
+                    2:begin
+                        SrcRect := Bounds(24, 88, 8, 8);
+                        BSet(96, 72);
+                    end;
+                    3:begin
+                        SrcRect := Bounds(24+8, 88, 8, 8);
+                        BSet(208, 48);
+                    end;
+                    4:begin
+                        SrcRect := Bounds(24+16, 88, 8, 8);
+                        BSet(216, 96);
+                    end;
+                    5:begin
+                        SrcRect := Bounds(24+24, 88, 8, 8);
+                        BSet(272, 72);
+                    end;
+                end;
+                //番号描画
+                DDDraw(BX,BY,SrcRect,ddsfFont,True);
+            end;
+            //決定済みキャラの描画
+            if PSLData[i2,i] <> -1 then begin
+                case i of
+                    0:begin
+                        BSet2(128, 64);
+                    end;
+                    1:begin
+                        BSet2(104, 64);
+                    end;
+                    2:begin
+                        BSet2(80, 64);
+                    end;
+                    3:begin
+                        BSet2(192, 40);
+                    end;
+                    4:begin
+                        BSet2(200, 88);
+                    end;
+                    5:begin
+                        BSet2(256, 64);
+                    end;
+                end;
+
+                F1 := (60 *(LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].Face div 10));
+                F2 := (10 *(LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].Face mod 10));
+
+                //下部
+                if LoadDt[P[i2].TeamNo].DBC[PSLData[i2,i]].FaceType = 3 then begin
+                    SrcRect := Bounds(64+((P[i2].TeamNo div 7)*80),((P[i2].TeamNo mod 7)*32)+(i2*16)+8, 16, 8);
+                end else begin
+                    SrcRect := Bounds(64+((P[i2].TeamNo div 7)*80),((P[i2].TeamNo mod 7)*32)+(i2*16), 16, 8);
+                end;
+                DDDraw(BX,BY+8,SrcRect,ddsfDBEtc,True);
+                //上部
+                SrcRect := Bounds((128*i2),(F1 + F2), 16,10);
+                DDDraw(BX,BY,SrcRect,ddsfDBFace,True);
+
+                //名前横決定済みの場合ポジション表示
+                if i2 = 0 then begin
+                    BDSet(24, 112,48, 8);
+                end else begin
+                    BDSet(176, 112,48, 8);
+                end;
+                if i <= 2 then begin
+                    SrcRect := Bounds(8, 0, 8, 8);
+                end else begin
+                    SrcRect := Bounds(8*(i-1), 0, 8, 8);
+                end;
+                DDDraw(BX+((PSLData[i2,i] mod 3)*DX)-8,BY+((PSLData[i2,i] div 3)*DY),SrcRect,ddsfFont,True);
+
+            end;
+        end
+    end;
+
+    //キャラステータス
+    for i2 := 0 to 1 do begin
+        if StBer_c[i2] < 32 then begin
+            inc(StBer_c[i2]);
+        end;
+    end;
+    //HPは1/4にしておく　データ入れ終わった時点で1/6にしておく
+    for i2 := 0 to 1 do begin
+
+        BDSet(56,24,128,0);
+        //国旗+チーム名
+        SrcRect := Bounds(80,96+((P[i2].TeamNo)*8), 80, 8);
+        DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBEtc,True);
+
+        //全員の名前
+        for i := 0 to 5 do begin
+
+            if i2 = 0 then begin
+                BDSet(24, 112,48, 8);
+            end else begin
+                BDSet(176, 112,48, 8);
+            end;
+
+            NameS := (P[i2].TeamNo * 6) + i;
+            NameSX := (NameS div 30)*40;
+            NameSY := (NameS mod 30)*8;
+
+            SrcRect := Bounds(NameSX,NameSY,40,8);
+            DDDraw(BX+((i mod 3)*DX),BY+((i div 3)*DY),SrcRect,ddsfDBName,True);
+
+            //選択キャラの名前
+            if i = CurPos[i2] then begin
+                DDDraw(BX,160,SrcRect,ddsfDBName,True);
+
+                //選択キャラの顔
+                BDSet(23, 145,154, 0);
+
+                F1 := (60 *(LoadDt[P[i2].TeamNo].DBC[i].Face div 10));
+                F2 := (10 *(LoadDt[P[i2].TeamNo].DBC[i].Face mod 10));
+
+                //下部
+                if LoadDt[P[i2].TeamNo].DBC[i].FaceType = 3 then begin
+                    SrcRect := Bounds(64+((P[i2].TeamNo div 7)*80),((P[i2].TeamNo mod 7)*32)+(i2*16)+8, 16, 8);
+                end else begin
+                    SrcRect := Bounds(64+((P[i2].TeamNo div 7)*80),((P[i2].TeamNo mod 7)*32)+(i2*16), 16, 8);
+                end;
+                DDDraw(BX+(i2*DX),BY+8,SrcRect,ddsfDBEtc,True);
+                //上部
+                SrcRect := Bounds((128*i2),(F1 + F2), 16,10);
+                DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBFace,True);
+            end;
+
+        end;
+
+        //バー
+        BDSet(120, 176,152, 8);
+        for i := 0 to 6 do begin
+
+            //謎の軍団の難易度によるステータス変更
+            if (i2 = 1) and (Stage = 9) and (GameLv <> 2) then begin
+                //やさしい
+                if GameLv = 0 then begin
+                    StBerData := TeamData2[0,CurPos[i2],i];//ノーマル熱血と同じ
+                //ふつう
+                end else begin
+                    if i <> 0 then begin
+                        StBerData := TeamData2[0,CurPos[i2],i];//ノーマル熱血と同じ
+                    end else begin
+                        StBerData := TeamData2[P[i2].TeamNo,CurPos[i2],i];
+                    end;
+                end;
+            end else begin
+                StBerData := TeamData2[P[i2].TeamNo,CurPos[i2],i];
+            end;
+
+            //ＨＰ増加ハンディキャップ
+            If (i = 0) then begin
+                if HDCDt[i2,0] = 1 then begin
+                    //150%
+                    StBerData := StBerData * 3 div 2;
+                end else if HDCDt[i2,0] = 2 then begin
+                    //200%
+                    StBerData := StBerData * 2;
+                end;
+            end;
+
+            //64オーバーの時も64で打ち止め
+            if StBerData > 64 then StBerData := 64;
+            //ＨＰとその他のステータス
+            if i = 0 then begin
+                if (StBer_c[i2]*2) <= StBerData then begin
+                    SrcRect := Bounds(120, 184, StBer_c[i2], 8);
+                end else begin
+                    SrcRect := Bounds(120, 184, StBerData div 2, 8);
+                end;
+            end else begin
+                if (StBer_c[i2]) <= (StBerData*2) then begin
+                    SrcRect := Bounds(120, 184, StBer_c[i2], 8);
+                end else begin
+                    SrcRect := Bounds(120, 184, StBerData*2, 8);
+                end;
+            end;
+            DDDraw(BX+(i2*DX),BY+(i*DY),SrcRect,ddsfDBEtc,True);
+        end;
+
+        //数値
+        BDSet(96, 176,152, 8);
+        for i := 0 to 6 do begin
+            //謎の軍団の難易度によるステータス変更
+            if (i2 = 1) and (Stage = 9) and (GameLv <> 2) then begin
+                //やさしい
+                if GameLv = 0 then begin
+                    StBerData := TeamData2[0,CurPos[i2],i];//ノーマル熱血と同じ
+                //ふつう
+                end else begin
+                    if i <> 0 then begin
+                        StBerData := TeamData2[0,CurPos[i2],i];//ノーマル熱血と同じ
+                    end else begin
+                        StBerData := TeamData2[P[i2].TeamNo,CurPos[i2],i];
+                    end;
+                end;
+            end else begin
+                StBerData := TeamData2[P[i2].TeamNo,CurPos[i2],i];
+            end;
+            //ＨＰ増加ハンディキャップ
+            If (i = 0) then begin
+                if HDCDt[i2,0] = 1 then begin
+                    //150%
+                    StBerData := StBerData * 3 div 2;
+                end else if HDCDt[i2,0] = 2 then begin
+                    //200%
+                    StBerData := StBerData * 2;
+                end;
+            end;
+            
+            //100の位
+            if (StBerData div 100) > 0 then begin
+                SrcRect := Bounds((StBerData div 100)*8,0,8,8);
+                DDDraw(BX+(i2*DX)-8,BY+(i*DY),SrcRect,ddsfFont,True);
+            end;
+
+            //10の位
+            if ((StBerData mod 100 div 10) > 0)
+            or ((StBerData div 100) > 0) then begin
+                SrcRect := Bounds((StBerData mod 100 div 10)*8,0,8,8);
+                DDDraw(BX+(i2*DX),BY+(i*DY),SrcRect,ddsfFont,True);
+            end;
+
+            //1の位
+            SrcRect := Bounds((StBerData mod 10)*8,0,8,8);
+            DDDraw(BX+(i2*DX)+8,BY+(i*DY),SrcRect,ddsfFont,True);
+
+        end;
+
+        //必殺シュート
+        BDSet(96,152,152, 8);
+        //ジャンプとダッシュ
+        for i := 0 to 1 do begin
+            SrcRect := Bounds(80,((TeamData2[P[i2].TeamNo,CurPos[i2],(i+7)]-1)*8),48,8);
+            DDDraw(BX+(i2*DX),BY+(i*DY),SrcRect,ddsfDBName,True);
+        end;
+
+    end;
+
+    if (PSLNo[0] = 6) and (PSLNo[1] = 6) then begin
+        inc(GetReady_c);
+        if GetReady_c >= 60 then begin
+            GetReady;
+        end;
+    end else begin
+        GetReady_c := 0;
+    end;
+
+end;
+
+//チームセレクト//====================================================================
+procedure TForm1.LoopTSL;
+const
+    BaseX2 = 8;
+    BaseX3 = 8;
+var
+    //画像描画用
+    SrcRect : TRect;
+    BX :integer;
+    BY :integer;
+    DX :integer;
+    DY :integer;
+    //ループ用
+    i       :Integer;
+    i2      :integer;
+    //変数への代入を楽にするもの
+    procedure BDSet(tBX:integer;tBY:integer;tDX:integer;tDY:integer);
+    begin
+        BX := tBX;
+        BY := tBY;
+        DX := tDX;
+        DY := tDY;
+    end;
+    //準備ＯＫ
+    procedure GetReady();
+    var
+        j :integer;
+        j2 :integer;
+    begin
+        GameMode  :=HDC;
+
+        for j2 := 0 to 1 do begin
+            for j := 0 to 5 do begin
+                PSLData[j2,j] := -1;
+                PSLData2[j2,j] := -1;
+            end;
+            StBer_c[j2] := 0;
+            CurCol[j2] := 0;
+            CurPos[j2] := 0;
+            PSLNo[j2] := 0;
+            PSLCol[j2] := 0;
+
+        end;
+        //SEStop;
+        //SYSBGM(1);
+        GetReady_c := 0;
+    end;
+
+begin
+
+    SrcRect := Bounds(0,0,320,240);
+    DDDraw(0,0,SrcRect,ddsfTSL,False);
+    //キー入力
+    //2P対戦
+    if CPU_f = False then begin
+        SrcRect := Bounds(96, 216, 16, 8);
+        DDDraw(232,48,SrcRect,ddsfDBEtc,True);
+        for i2 := 0 to 1 do begin
+            if P[i2].TeamNo = -1 then begin
+                if P[i2].KeyU = True then begin
+                    SE(0);
+                    Dec(CurPos[i2]);
+                    StBer_c[i2] := 0;
+                    if CurPos[i2] < 0 then CurPos[i2] := 8;
+                    CurCol[i2] := 0;
+                end else if P[i2].KeyD = True then begin
+                    SE(0);
+                    Inc(CurPos[i2]);
+                    StBer_c[i2] := 0;
+                    if CurPos[i2] > 8 then CurPos[i2] := 0;
+                    CurCol[i2] := 0;
+                end;
+            end;
+            if P[i2].KeyP = True then begin
+                if P[i2].TeamNo = -1 then begin
+                    P[i2].TeamNo := CurPos[i2];
+                    SE(38);
+                end;
+            end else if P[i2].KeyK = True then begin
+                P[i2].TeamNo := -1;
+            end;
+        end;
+    //VSCPU
+    end else begin
+        SrcRect := Bounds(112, 216, 24, 8);
+        DDDraw(232,48,SrcRect,ddsfDBEtc,True);
+
+        if P[0].TeamNo = -1 then begin
+            i2 := 0;
+        end else begin
+            i2 := 1;
+        end;
+
+        if P[0].KeyU = True then begin
+            SE(0);
+            Dec(CurPos[i2]);
+            StBer_c[i2] := 0;
+            if CurPos[i2] < 0 then CurPos[i2] := 8;
+            CurCol[i2] := 0;
+        end else if P[0].KeyD = True then begin
+            SE(0);
+            Inc(CurPos[i2]);
+            StBer_c[i2] := 0;
+            if CurPos[i2] > 8 then CurPos[i2] := 0;
+            CurCol[i2] := 0;
+        end;
+
+        if P[0].KeyP = True then begin
+            P[i2].TeamNo := CurPos[i2];
+            SE(38);
+        end else if P[0].KeyK = True then begin
+            if P[1].TeamNo <> -1 then begin
+                P[1].TeamNo := -1;
+            end else begin
+                P[0].TeamNo := -1;
+            end;
+        end;
+    end;
+    for i2 := 0 to 1 do begin
+        //カーソル点滅
+        inc(CurCol[i2]);
+        if CurCol[i2] >= CurColMax then CurCol[i2] := 0;
+        if Not((CPU_f = True) and (i2 = 1) and (P[0].TeamNo = -1)) then begin
+            if (CurCol[i2] < CurColHalf) or (P[i2].TeamNo <> -1) then begin
+                SrcRect := Bounds(128-(8*i2), 88, 8, 8);
+                BDSet(72, 72,168, 16);
+                //カーソル描画
+                DDDraw(BX+(DX*i2),BY+(CurPos[i2])*DY,SrcRect,ddsfFont,True);
+            end;
+        end;
+        //チームステータス
+        if StBer_c[i2] < 32 then begin
+            inc(StBer_c[i2]);
+        end;
+        //HPは1/4にしておく　データ入れ終わった時点で1/6にしておく
+
+        for i := 0 to 6 do begin
+            if i2 = 0 then begin
+                BDSet(119,144+8,0,8);
+                if (StBer_c[i2]) <= (TeamData[CurPos[i2],i]) then begin
+                    SrcRect := Rect(111-(StBer_c[i2]),184,111,192);
+                    DDDraw(BX-(StBer_c[i2]),BY+(DY*i),SrcRect,ddsfDBEtc,True);
+                end else begin
+                    SrcRect := Rect(111-(TeamData[CurPos[i2],i]),184,111,192);
+                    DDDraw(BX-(TeamData[CurPos[i2],i]),BY+(DY*i),SrcRect,ddsfDBEtc,True);
+                end;
+            end else begin
+                BDSet(200,144+8,0,8);
+                if (StBer_c[i2]) <= (TeamData[CurPos[i2],i]) then begin
+                    SrcRect := Bounds(120, 184, StBer_c[i2], 8);
+                end else begin
+                    SrcRect := Bounds(120, 184, TeamData[CurPos[i2],i], 8);
+                end;
+                DDDraw(BX,BY+(DY*i),SrcRect,ddsfDBEtc,True);
+            end;
+        end;
+        BDSet(80,104-24,80,0);
+        //国旗+チーム名
+        SrcRect := Bounds(80,96+(CurPos[i2]*8), 80, 8);
+        DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBEtc,True);
+
+        //キャプテン画像
+        BDSet(104,104,80,0);
+        SrcRect := Bounds(((CurPos[i2] div 7)*80)+(i2*32),((CurPos[i2] mod 7) * 32), 32, 32);
+        DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBEtc,True);
+    end;
+
+    if (P[0].TeamNo <> -1) and (P[1].TeamNo <> -1) then begin
+        inc(GetReady_c);
+        if GetReady_c >= 30 then begin
+            GetReady;
+        end;
+    end else begin
+        GetReady_c := 0;
+    end;
+
+end;
+//ハンディキャップ選択//====================================================================
+procedure TForm1.LoopHDC;
+const
+    BaseX2 = 8;
+    BaseX3 = 8;
+var
+    //画像描画用
+    SrcRect : TRect;
+    BX :integer;
+    BY :integer;
+    DX :integer;
+    DY :integer;
+    //ループ用
+    i       :Integer;
+    i2      :integer;
+    procedure BDSet(tBX:integer;tBY:integer;tDX:integer;tDY:integer);
+    begin
+        BX := tBX;
+        BY := tBY;
+        DX := tDX;
+        DY := tDY;
+    end;
+    procedure GetReady();
+    var
+        j2 :integer;
+    begin
+        GameMode  :=CSL;
+        GetReady_c := 0;
+        for j2 := 0 to 1 do begin
+            StBer_c[j2] := 0;
+            CurCol[j2] := 0;
+            CurPos[j2] := 0;
+        end;
+        //SYSBGM(1);
+    end;
+
+begin
+
+    SrcRect := Bounds(0,0,320,240);
+    DDDraw(0,0,SrcRect,ddsfHDC,False);
+    //キー入力
+    if CPU_f = False then begin
+        SrcRect := Bounds(96, 216, 16, 8);
+        DDDraw(232,48,SrcRect,ddsfDBEtc,True);
+        for i2 := 0 to 1 do begin
+            if CurPos[i2] < 3 then begin
+                if P[i2].KeyL = True then begin
+                    SE(0);
+                    if HDCDt[i2,CurPos[i2]] > 0 then Dec(HDCDt[i2,CurPos[i2]]);
+                    CurCol[i2] := 0;
+                end else if P[i2].KeyR = True then begin
+                    SE(0);
+                    if HDCDt[i2,CurPos[i2]] < 2 then Inc(HDCDt[i2,CurPos[i2]]);
+                    CurCol[i2] := 0;
+                end;
+            end;
+            if P[i2].KeyP = True then begin
+                if CurPos[i2] < 3 then begin
+                    inc(CurPos[i2]);
+                    CurCol[i2] := 0;
+                    SE(38);
+                end;
+            end else if P[i2].KeyK = True then begin
+                if CurPos[i2] > 0 then begin
+                    dec(CurPos[i2]);
+                    CurCol[i2] := 0;
+                    //SE(38);
+                end;
+            end;
+        end;
+    end else begin
+        SrcRect := Bounds(112, 216, 24, 8);
+        DDDraw(232,48,SrcRect,ddsfDBEtc,True);
+        if CurPos[0] = 3 then begin
+            i2 := 1;
+        end else begin
+            i2 := 0;
+        end;
+        if CurPos[i2] < 3 then begin
+            if P[0].KeyL = True then begin
+                SE(0);
+                if HDCDt[i2,CurPos[i2]] > 0 then Dec(HDCDt[i2,CurPos[i2]]);
+                CurCol[i2] := 0;
+            end else if P[0].KeyR = True then begin
+                SE(0);
+                if HDCDt[i2,CurPos[i2]] < 2 then Inc(HDCDt[i2,CurPos[i2]]);
+                CurCol[i2] := 0;
+            end;
+        end;
+        if P[0].KeyP = True then begin
+            if CurPos[i2] < 3 then begin
+                inc(CurPos[i2]);
+                CurCol[i2] := 0;
+                SE(38);
+            end;
+        end else if P[0].KeyK = True then begin
+            if CurPos[i2] > 0 then begin
+                dec(CurPos[i2]);
+                CurCol[i2] := 0;
+                //SE(38);
+            end else begin
+                if i2 = 1 then begin
+                    CurPos[0] := 2;
+                end;
+            end;
+        end;
+    end;
+    for i2:= 0 to 1 do begin
+        //カーソル点滅
+        inc(CurCol[i2]);
+        if CurCol[i2] >= CurColMax then CurCol[i2] := 0;
+        //選択中
+        if CurPos[i2] < 3 then begin
+            if Not((CPU_f = True) and (i2 = 1) and (CurPos[0] < 3)) then begin
+                if (CurCol[i2] < CurColHalf) then begin
+                    SrcRect := Bounds(128-8, 88, 8, 8);
+                    BDSet(8, 112,160, 40);
+                    //カーソル描画
+                    DDDraw(BX+(HDCDt[i2,CurPos[i2]]*48)+(i2*DX),BY+(CurPos[i2])*DY,SrcRect,ddsfFont,True);
+                end;
+            end;
+        //ＯＫ！
+        end else begin
+
+            SrcRect := Bounds(80, 216, 16, 8);
+            BDSet(72, 216,160, 0);
+            DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBEtc,True);
+
+        end;
+
+        //点灯文字（３列）
+        BDSet(16, 112,160, 40);
+        for i := 0 to 2 do begin
+            SrcRect := Bounds(80+(HDCDt[i2,i]*32), 192+(i*8), 32, 8);
+            DDDraw(BX+(HDCDt[i2,i]*48)+(i2*DX),BY+(i*DY),SrcRect,ddsfDBEtc,True);
+        end;
+
+        BDSet(40,72,160,0);
+        //国旗+チーム名
+        SrcRect := Bounds(80,96+(P[i2].TeamNo*8), 80, 8);
+        DDDraw(BX+(i2*DX),BY,SrcRect,ddsfDBEtc,True);
+
+    end;
+
+    if (CurPos[0] = 3) and (CurPos[1] = 3)  then begin
+        inc(GetReady_c);
+        if GetReady_c >= 30 then begin
+            GetReady;
+        end;
+    end else begin
+        GetReady_c := 0;
+    end;
+    
+end;
+//コート選択//====================================================================
+procedure TForm1.LoopCSL;
+const
+    BaseX2 = 8;
+    BaseX3 = 8;
+var
+    //画像描画用
+    SrcRect : TRect;
+    BX :integer;
+    BY :integer;
+    DX :integer;
+    DY :integer;
+
+    procedure BDSet(tBX:integer;tBY:integer;tDX:integer;tDY:integer);
+    begin
+        BX := tBX;
+        BY := tBY;
+        DX := tDX;
+        DY := tDY;
+    end;
+    procedure GetReady();
+    var
+        j2 :integer;
+    begin
+        GameMode  :=PSL;
+        Stage := ((CurPos[0] div 10) * 3) + (CurPos[0] mod 10);
+        for j2 := 0 to 1 do begin
+            StBer_c[j2] := 0;
+            CurCol[j2] := 0;
+            CurPos[j2] := 0;
+        end;
+        SYSBGM(1);
+    end;
+
+begin
+
+    SrcRect := Bounds(0,0,320,240);
+    DDDraw(0,0,SrcRect,ddsfCSL,False);
+
+    //キー入力
+
+    if P[0].KeyU = True then begin
+        SE(0);
+        CurCol[0] := 0;
+        if CurPos[0] div 10 > 0 then dec(CurPos[0],10);
+    end else if P[0].KeyD = True then begin
+        SE(0);
+        CurCol[0] := 0;
+        if CurPos[0] div 10 < 2 then inc(CurPos[0],10);
+    end else if P[0].KeyL = True then begin
+        SE(0);
+        CurCol[0] := 0;
+        if CurPos[0] mod 10 > 0 then dec(CurPos[0]);
+    end else if P[0].KeyR = True then begin
+        SE(0);
+        CurCol[0] := 0;
+        if CurPos[0] mod 10 < 2 then inc(CurPos[0]);
+    end;
+
+    if (P[0].KeyP = True) and (GetReady_c = 0) then begin
+        SE(38);
+        GetReady_c := 1;
+    end else if P[0].KeyK = True then begin
+        GetReady_c := 0;
+    end;
+
+    //カーソル点滅
+    inc(CurCol[0]);
+    if CurCol[0] >= CurColMax then CurCol[0] := 0;
+    if (CurCol[0] < CurColHalf) or (GetReady_c >= 1) then begin
+        SrcRect := Bounds(128-8, 88, 8, 8);
+        BDSet(24, 80,104, 72);
+        //カーソル描画
+        DDDraw(BX+((CurPos[0] mod 10)*DX),BY+((CurPos[0] div 10)*DY),SrcRect,ddsfFont,True);
+    end;
+
+    if GetReady_c >= 1 then begin
+        inc(GetReady_c);
+        if GetReady_c >= 30 then begin
+            GetReady;
+        end;
+    end else begin
+        GetReady_c := 0;
+    end;
+
+end;
+//ドッジ試合//====================================================================
+procedure TForm1.LoopDB;
+var
+    i  : integer;
+begin
+
+    //スタート
+    If Ready_c > 0 then begin
+        if Ready_c = 174 then SE(18);
+        dec(Ready_c);
+        if Ready_c = 0 then BGM(Stage);
+        for i := 0 to 1 do begin
+            P[i].TwoHit := None;
+        end;
+        //DBKeyInput;
+        DBMotionType;
+        DBMove;
+        DBAction;
+        //DBBallAction;
+        //DBJudge;
+        DBBlt;
+        PauseAble_f := False;
+
+    //勝ち＆負け
+    end else If GameSet_c > 0 then begin
+        dec(GameSet_c);
+        if GameSet_c = 380 then begin
+            if P[1].Dead_c >= 3 then begin
+                Camera := 16000;
+                //対ＣＰＵ
+                if Ensei_f = True then begin
+                    if ((Stage = 8) and (NODead_f = False))
+                    or (Stage = 9) then begin
+                        SE(21);//優勝
+                        //パスワード
+                        if Stage = 9 then begin
+                            HardClear:=GameLv;
+                        end;
+                    end else begin
+                        SE(19);
+                    end;
+                end else begin
+                    SE(19);
+                end;
+            end else if P[0].Dead_c >= 3 then begin
+                Camera := (432-160)*100;
+                if CPU_f = True then begin
+                    SE(20);//敗北音
+                end else begin
+                    SE(19);//勝利音
+                end;
+            end;
+        end else if GameSet_c < 380 then begin
+            if (P[0].KeyP = True)
+            or ((P[1].KeyP = True) and (CPU_f = True)) then begin//対ＣＰＵじゃないときは２Ｐでも可
+                GameSet_c := 0;
+                SEStop;
+            end;
+        end;
+        if GameSet_c = 0 then begin
+            //遠征試合＆勝ち
+            if (Ensei_f = True) and (P[1].Dead_c >= 3)
+            and ((Stage < 8) or ((Stage = 8) and (NODead_f = True))) then begin
+                //データ初期化
+                for i := 0 to 1 do begin
+                    StBer_c[i] := 0;
+                    P[i] := InitP;
+                    //おしっぱにするとそのままＶＳも飛ばしてしまうので
+                    P[i].KeyP2 := True;
+                end;
+                //データ初期化
+                for i := 0 to 5 do begin
+                    C[i] := InitC;
+                end;
+                inc(Stage);
+                //ボールの色
+                if Stage = 2 then begin
+                    Ball.BColor := BCol2;
+                end else begin
+                    Ball.BColor := BCol1;
+                end;
+                P[1].TeamNo := Stage;
+                GameMode  := VS;
+                VS_c := 0;
+
+                BGMStop;
+
+                SE(17);
+            end else begin
+                DataReset;
+                GameMode := NAMENNAYO;
+            end;
+        end else begin
+            //DBMotionType;
+            //DBMove;
+            //DBAction;
+            DBBallAction;
+            DBBlt;
+        end;
+
+        PauseAble_f := False;
+        
+    //試合中
+    end else begin
+        DBKeyInput;
+        DBMotionType;
+        DBMove;
+        DBAction;
+        DBBallAction;
+        DBJudge;
+        DBBlt;
+
+        PauseAble_f := True;
+    end;
+    
+end;
+
+//画像の描画
+procedure DDDraw(xxx:integer;yyy:integer;sr:TRect;ddsf:TDDDDSurface;Mask_f:boolean);
+var
+    dr:TRect;
+begin
+
+    if FPSSkip_c = 0 then begin
+        sr := Rect(sr.Left*Mag,sr.Top*Mag,sr.Right*Mag,sr.Bottom*Mag);
+        dr := Bounds(xxx*Mag,yyy*Mag,sr.Right-sr.Left,sr.Bottom-sr.Top);
+        if Mask_f = True then begin
+            ddsf.Put(dr,sr,DDBLT_WAIT or DDBLT_KEYSRC,fx)
+        end else begin
+            ddsf.Put(dr,sr,DDBLT_WAIT,fx)
+        end;
+    end;
+end;
+//画面の色変え
+procedure ColorChange(ccc:TColor);
+begin
+    //暗転
+    Form1.DDDD1.BackBuffer.FillRect(Bounds(0,0,320*Mag,240*Mag),Form1.DDDD1.BackBuffer.ColorMatch(ccc));
+end;
+
+//文字描画
+procedure StrDraw(xxx:integer;yyy:integer;DStr:Widestring);
+var
+    //i:integer;
+    i:integer;
+    i2:integer;
+    SrcRect:TRect;
+    //Draw_f :Boolean;
+begin
+
+    for i := 0 to 31 do begin//最長１６文字
+
+        if DStr[i+1] = Moji[221] then break;//end
+
+        if DStr[i+1] <> Moji[220] then begin//スペース
+            for i2 := 0 to 219 do begin//もじ
+                if DStr[i+1] = Moji[i2] then begin
+                    SrcRect := Bounds(8*(i2 mod 20),8*(i2 div 20),8,8);
+                    DDDraw(xxx+(8*i),yyy,SrcRect,ddsfFont,True);
+                    //濁音
+                    if ((i2 >= 91) and (i2 <= 110))
+                    or ((i2 >= 171) and (i2 <= 190)) then begin
+                        SrcRect := Bounds(0,88,8,8);
+                        DDDraw(xxx+(8*i),yyy-8,SrcRect,ddsfFont,True);
+                    //半濁音
+                    end else if ((i2 >= 111) and (i2 <= 115))
+                    or ((i2 >= 191) and (i2 <= 195)) then begin
+                        SrcRect := Bounds(8,88,8,8);
+                        DDDraw(xxx+(8*i),yyy-8,SrcRect,ddsfFont,True);
+                    end;
+                    break;
+                end;
+            end;
+        end;
+    end;
+end;
+//顔描画
+procedure FaceDraw(i:integer;i2:integer;xxx:integer;yyy:integer;ftype:integer);
+var
+    //描画用
+    sr :TRect;
+    dr :TRect;
+    //顔転送元用
+    F1:integer;
+    F2:integer;
+    //顔の種類ごとの補正
+    RevX :integer;
+    RevY :integer;
+    //向きによる転送元の補正
+    procedure srSet(tL,tW:integer);
+    begin
+        with P[i2].DBC[i] do begin
+            if Muki = Migi then begin
+                sr.Left := tL;
+                sr.Right:= tL+tW;
+            end else if Muki = Hidari then begin
+                sr.Right:= 144-tL;
+                sr.Left := 144-tL-tW;
+            end;
+        end;
+    end;
+begin
+    if FPSSkip_c = 0 then begin
+        RevX:= 17;
+        RevY:= 0;
+        if (ftype >= 1) and (ftype <= 5) then begin
+
+            F1 := (60 *(P[i2].DBC[i].Face div 10));
+            F2 := (10 *(P[i2].DBC[i].Face mod 10));
+
+            sr.Top := F1+F2;
+            sr.Bottom := sr.Top+10;
+
+            case ftype of
+                1:begin//正面
+                    srSet(0,16);
+                end;
+                2:begin//横
+                    srSet(16,16);
+                    //屈み
+                    if (P[i2].DBC[i].mNo = 309) then begin
+
+                        sr.Bottom := sr.Top+9;
+
+                    end else if (P[i2].DBC[i].mNo = 310) then begin
+
+                        sr.Bottom := sr.Top+8;
+
+                    end;
+
+                end;
+                3:begin//倒れ、飲み
+                    RevX:= 0;
+                    RevY:= 16;
+                    srSet(32,8);
+                end;
+                4:begin//勝ち
+                    srSet(56,16);
+                end;
+                5:begin//後ろ
+                    srSet(40,16);
+                end;
+            end;
+            if P[i2].DBC[i].Muki = Hidari then begin
+                RevX := 48 - RevX - (sr.Right-sr.Left);
+            end;
+            sr := Rect(sr.Left*Mag,sr.Top*Mag,sr.Right*Mag,sr.Bottom*Mag);
+            dr := Bounds((xxx+RevX)*Mag,(yyy+RevY)*Mag,sr.Right-sr.Left,sr.Bottom-sr.Top);
+            ddsfDBFace.Put(dr,sr,DDBLT_WAIT or DDBLT_KEYSRC,fx);
+
+            //屈み
+            if ((P[i2].DBC[i].mNo = 309) or (P[i2].DBC[i].mNo = 310))
+            and ((P[i2].DBC[i].Name = 'むはまど') or (P[i2].DBC[i].Name = 'ひろし２')) then begin
+                sr.Top := F1+F2;
+                sr.Bottom := sr.Top+10;
+                srSet(16,16);
+                if P[i2].DBC[i].Muki = Migi then begin
+                    sr.Left := sr.Left+8;
+                end else begin
+                    sr.Right := sr.Right-8;
+                end;
+                RevX:= 17+8;
+                RevY:= 0;
+                if P[i2].DBC[i].Muki = Hidari then begin
+                    RevX := 48 - RevX - (sr.Right-sr.Left);
+                end;
+                sr := Rect(sr.Left*Mag,sr.Top*Mag,sr.Right*Mag,sr.Bottom*Mag);
+                dr := Bounds((xxx+RevX)*Mag,(yyy+RevY)*Mag,sr.Right-sr.Left,sr.Bottom-sr.Top);
+
+
+
+                ddsfDBFace.Put(dr,sr,DDBLT_WAIT or DDBLT_KEYSRC,fx);
+            end;
+
+
+        end;
+    end;
+end;
+
+//ＳＥをならす
+procedure SE(SENo:integer);
+begin
+    if Form1.DXSound.Initialized = False then Exit;
+    dsSE[SENo].Stop;
+    dsSE[SENo].Position := 0;
+    dsSE[SENo].Play(False);
+end;
+
+//ＢＧＭを再生する
+procedure BGM(BGMNo:integer);
+begin
+    if Form1.DXSound.Initialized = False then Exit;
+    dsBGM[BGMNo].Stop;
+    dsBGM[BGMNo].Position := 0;
+    dsBGM[BGMNo].Play(True);
+end;
+
+//ＢＧＭ一時停止（ポーズ時）
+procedure BGMStopSt(BGMNo:integer);
+begin
+    if Form1.DXSound.Initialized = False then Exit;
+    dsBGM[BGMNo].Stop;
+end;
+
+//ＢＧＭ一時停止解除（ポーズ時）
+procedure BGMPlaySt(BGMNo:integer);
+begin
+    if Form1.DXSound.Initialized = False then Exit;
+    dsBGM[BGMNo].Play(True);
+end;
+
+//ＢＧＭをならす
+procedure SYSBGM(SYSNo:integer);
+var
+    i:integer;
+begin
+    if Form1.DXSound.Initialized = False then Exit;
+    for i := 0 to SYSNum do begin
+        dsSYS[SYSNo].Stop;
+    end;
+    dsSYS[SYSNo].Position := 0;
+    dsSYS[SYSNo].Play(True);
+end;
+
+//ＢＧＭストップ
+procedure BGMStop;
+var
+    i:integer;
+begin
+    for i := 0 to SYSNum do begin
+        dsSYS[i].Stop;
+    end;
+    for i := 0 to BGMNum do begin
+        dsBGM[i].Stop;
+    end;
+end;
+
+//ＳＥストップ
+procedure SEStop;
+var
+    i:integer;
+begin
+    for i := 0 to SENum do begin
+        dsSE[i].Stop;
+    end;
+end;
+
+//ＳＥストップ（個別）
+procedure SEStop2(SENo:integer);
+begin
+    dsSE[SENo].Stop;
+end;
+
+//キー入力
+procedure TForm1.KeyState;
+Const
+    TH_c = 8;//--TwoHit受け付け時間(フレーム)
+    KeyNo = 1;//コントローラーの数
+var
+    i:integer;
+    //配列に変換しといた方がやりやすそうだから。
+    UUUU : array[0..3] of Boolean;
+    DDDD : array[0..3] of Boolean;
+    LLLL : array[0..3] of Boolean;
+    RRRR : array[0..3] of Boolean;
+    PPPP : array[0..3] of Boolean;
+    KKKK : array[0..3] of Boolean;
+    JJJJ : array[0..3] of Boolean;
+    SSSS : array[0..3] of Boolean;
+
+    PBtn_f:boolean;
+
+    procedure GetBtnState;
+        procedure GetBtnState2(tDXI:TDXInputStates;tPNo:integer);
+            Function GetBtnState3(tDXI:TDXInputStates;tJC:integer):boolean;
+            begin
+                Result := False;
+                case tJC of
+                    1 : if isButton1  in tDXI then Result:=True;
+                    2 : if isButton2  in tDXI then Result:=True;
+                    3 : if isButton3  in tDXI then Result:=True;
+                    4 : if isButton4  in tDXI then Result:=True;
+                    5 : if isButton5  in tDXI then Result:=True;
+                    6 : if isButton6  in tDXI then Result:=True;
+                    7 : if isButton7  in tDXI then Result:=True;
+                    8 : if isButton8  in tDXI then Result:=True;
+                    9 : if isButton9  in tDXI then Result:=True;
+                    10: if isButton10 in tDXI then Result:=True;
+                    11: if isButton11 in tDXI then Result:=True;
+                    12: if isButton12 in tDXI then Result:=True;
+                    13: if isButton13 in tDXI then Result:=True;
+                    14: if isButton14 in tDXI then Result:=True;
+                    15: if isButton15 in tDXI then Result:=True;
+                    16: if isButton16 in tDXI then Result:=True;
+                    17: if isButton17 in tDXI then Result:=True;
+                    18: if isButton18 in tDXI then Result:=True;
+                    19: if isButton19 in tDXI then Result:=True;
+                    20: if isButton20 in tDXI then Result:=True;
+                    21: if isButton21 in tDXI then Result:=True;
+                    22: if isButton22 in tDXI then Result:=True;
+                    23: if isButton23 in tDXI then Result:=True;
+                    24: if isButton24 in tDXI then Result:=True;
+                    25: if isButton25 in tDXI then Result:=True;
+                    26: if isButton26 in tDXI then Result:=True;
+                    27: if isButton27 in tDXI then Result:=True;
+                    28: if isButton28 in tDXI then Result:=True;
+                    29: if isButton29 in tDXI then Result:=True;
+                    30: if isButton30 in tDXI then Result:=True;
+                    31: if isButton31 in tDXI then Result:=True;
+                    32: if isButton32 in tDXI then Result:=True;
+                end;
+            end;
+        begin
+
+            if CBtn_f[tPNo] = False then begin
+                if isUp    in tDXI then UUUU[tPNo]:=True;
+                if isDown  in tDXI then DDDD[tPNo]:=True;
+                if isLeft  in tDXI then LLLL[tPNo]:=True;
+                if isRight in tDXI then RRRR[tPNo]:=True;
+            //ボタンに十字ボタンを割り当てたとき
+            end else begin
+                UUUU[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,4]);
+                DDDD[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,5]);
+                LLLL[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,6]);
+                RRRR[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,7]);
+            end;
+            PPPP[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,0]);
+            KKKK[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,1]);
+            JJJJ[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,2]);
+            SSSS[tPNo] := GetBtnState3(tDXI,JoyCode[tPNo,3]);
+        end;
+    begin
+
+        DXInput1.Update;
+        GetBtnState2(DXInput1.States,0);
+        
+        if KeyNo >= 1 then begin
+            DXInput2.Update;
+            GetBtnState2(DXInput2.States,1);
+        end;
+        if KeyNo >= 2 then begin
+            DXInput3.Update;
+            GetBtnState2(DXInput3.States,2);
+        end;
+        if KeyNo >= 3 then begin
+            DXInput4.Update;
+            GetBtnState2(DXInput4.States,3);
+        end;
+    end;
+
+begin
+    for i := 0 to KeyNo do begin
+        P[i].KeyU:=False;
+        P[i].KeyD:=False;
+        P[i].KeyL:=False;
+        P[i].KeyR:=False;
+        P[i].KeyP:=False;
+        P[i].KeyK:=False;
+        P[i].KeyJ:=False;
+        P[i].KeyS:=False;
+        UUUU[i]:=False;
+        DDDD[i]:=False;
+        LLLL[i]:=False;
+        RRRR[i]:=False;
+        PPPP[i]:=False;
+        KKKK[i]:=False;
+        JJJJ[i]:=False;
+        SSSS[i]:=False;
+    end;
+    //入力デバイスから最新の入力状態を取得する
+    GetBtnState;
+
+    PBtn_f := False;
+    for i := 0 to KeyNo do begin
+        if SSSS[i] = True then begin
+            if P[i].KeyS2 = False then begin
+                P[i].KeyS := True;
+                PBtn_f := True;
+            end;
+            P[i].KeyS2 := True;
+        end else if (SSSS[i] = False) and (P[i].KeyS2 = True) then begin
+            P[i].KeyS2 := False;
+        end;
+    end;
+    //ポーズ
+    if (PauseAble_f = True) then begin
+        if PBtn_f = True then begin
+            if Pause_f = 0 then begin
+                Pause_f := 1;
+            end else begin
+                Pause_f := 3;
+            end;
+        end;
+    end;
+
+    //ジャンプボタンをセレクトボタンとして使うための物
+
+    //if JJJJ[0] = True then begin
+    //    P0JK := True;
+    //end else begin
+    //    P0JK := False;
+    //end;
+
+    for i := 0 to KeyNo do begin
+        //TLag増加
+        if TLag[i] <= TH_c then inc(TLag[i]);
+
+        //↑
+        if UUUU[i]=True then begin
+            if P[i].KeyU2 = False then P[i].KeyU := True;
+            P[i].KeyU2 := True;
+            NowKey[i] := Ue;
+            //TwoHit判定
+            if (TLag[i] <=TH_c) and (NowKey[i] = LastKey[i]) then P[i].TwoHit := NowKey[i];
+        end;
+
+        //↓
+        if DDDD[i]=True then begin
+            if P[i].KeyD2 = False then P[i].KeyD := True;
+            P[i].KeyD2 := True;
+            NowKey[i] := Shita;
+            //TwoHit判定
+            if (TLag[i] <=TH_c) and (NowKey[i] = LastKey[i]) then P[i].TwoHit := NowKey[i];
+        end;
+
+        //←
+        if LLLL[i]=True then begin
+            if P[i].KeyL2 = False then P[i].KeyL := True;
+            P[i].KeyL2 := True;
+            NowKey[i] := Hidari;
+            //TwoHit判定
+            if (TLag[i] <=TH_c) and (NowKey[i] = LastKey[i]) then P[i].TwoHit := NowKey[i];
+        end;
+
+        //→
+        if RRRR[i]=True then begin
+            if P[i].KeyR2 = False then P[i].KeyR := True;
+            P[i].KeyR2 := True;
+            NowKey[i] := Migi;
+            //TwoHit判定
+            if (TLag[i] <=TH_c) and (NowKey[i] = LastKey[i]) then P[i].TwoHit := NowKey[i];
+        end;
+
+        //P
+        if PPPP[i]=True then begin
+            if P[i].KeyP2 = False then P[i].KeyP := True;
+            P[i].KeyP2 := True;
+        end else begin
+            if P[i].KeyP2 = True then P[i].KeyP2 := False;
+        end;
+
+        //K
+        if KKKK[i]=True then begin
+            if P[i].KeyK2 = False then P[i].KeyK := True;
+            P[i].KeyK2 := True;
+        end else begin
+            if P[i].KeyK2 = True then P[i].KeyK2 := False;
+        end;
+
+        //同時押し
+        if (P[i].KeyP2 = True)  and (P[i].KeyK2 = True)then begin
+            P[i].KeyP := False;
+            P[i].KeyK := False;
+            JJJJ[i]:=True;
+        end;
+
+        //J
+        if JJJJ[i]=True then begin
+            if P[i].KeyJ2 = False then P[i].KeyJ := True;
+            P[i].KeyJ2 := True;
+        end else begin
+            if P[i].KeyJ2 = True then P[i].KeyJ2 := False;
+        end;
+
+        
+        {
+        //KeyRev用
+        if (P[i].KeyJ = True) and (P[i].KeyRev<2) then begin
+            inc(P[i].KeyRev);
+        end;
+        
+        if (P[0].KeyJ = True) and (P0JK = True) then begin
+            P0JK := True;
+        end else begin
+            P0JK := False;
+        end;
+
+        }
+        //離
+        if (UUUU[i] = False) and (P[i].KeyU2 = True) then begin
+            P[i].KeyU2 := False;
+            LastKey[i] := Ue;
+            TLag[i]    := 0;
+        end;
+        if (DDDD[i] = False) and (P[i].KeyD2 = True) then begin
+            P[i].KeyD2 := False;
+            LastKey[i] := Shita;
+            TLag[i]    := 0;
+        end;
+        if (LLLL[i] = False) and (P[i].KeyL2 = True) then begin
+            P[i].KeyL2 := False;
+            LastKey[i] := Hidari;
+            TLag[i]    := 0;
+        end;
+        if (RRRR[i] = False) and (P[i].KeyR2 = True) then begin
+            P[i].KeyR2 := False;
+            LastKey[i] := Migi;
+            TLag[i]    := 0;
+        end;
+
+        with P[i] do begin
+            //キーボード同時押しによる不具合解消
+            If (KeyU2 = True) and (KeyD2 = True) then begin
+                KeyU := False;
+                KeyD := False;
+                KeyU2 := False;
+                KeyD2 := False;
+            end;
+            If (KeyL2 = True) and (KeyR2 = True) then begin
+                KeyL := False;
+                KeyR := False;
+                KeyL2 := False;
+                KeyR2 := False;
+            end;
+            {
+            If (KeyU2 = False) and (KeyD2 = False) and (KeyL2 = False)
+            and (KeyR2 = False) and (Dash_f = None) Then Move_f := False;
+            }
+        end;
+    end;
+
+end;
+//パーセント//****************************************************************************//
+function Per100(i:integer):boolean;
+begin
+    if Random(100) < i then Result := True
+    else Result := False;
+end;
+
+//難易度によるパーセント//****************************************************************************//
+function LvPer100(i:integer):boolean;
+begin
+    //やさしい
+    If GameLv = 0 then begin
+        if Random(200) < i then Result := True
+        else Result := False;
+    //ふつう
+    end else If GameLv = 1 then begin
+        if Random(150) < i then Result := True
+        else Result := False;
+    //むずい
+    end else begin
+        if Random(100) < i then Result := True
+        else Result := False;
+    end;
+end;
+
+end.
+
+
